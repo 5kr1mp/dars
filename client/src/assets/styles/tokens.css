@@ -1,0 +1,80 @@
+:root {
+  /* Brand */
+  --color-primary-50: #eef6f5;
+  --color-primary-100: #d6ebe8;
+  --color-primary-200: #aed7d2;
+  --color-primary-300: #7dbdb6;
+  --color-primary-400: #4ea29a;
+  --color-primary-500: #2c8780;
+  --color-primary-600: #1f6c66;
+  --color-primary-700: #185751;
+  --color-primary-800: #144641;
+  --color-primary-900: #0f3531;
+
+  /* Accent — soft rose for emergency / SOS without being alarming */
+  --color-accent-50: #fdeef0;
+  --color-accent-100: #fad8dd;
+  --color-accent-300: #ee8a96;
+  --color-accent-500: #d94a5e;
+  --color-accent-600: #b83549;
+  --color-accent-700: #93253a;
+
+  /* Neutrals — warm gray */
+  --color-bg: #f7f6f3;
+  --color-surface: #ffffff;
+  --color-surface-alt: #fafaf7;
+  --color-border: #e6e4dd;
+  --color-border-strong: #d0cdc4;
+  --color-text: #1f2530;
+  --color-text-muted: #5b6371;
+  --color-text-soft: #8a8f9a;
+
+  /* Semantic */
+  --color-success: #2f9e6e;
+  --color-success-bg: #e3f4ec;
+  --color-warning: #c98a16;
+  --color-warning-bg: #fbf1d7;
+  --color-danger: #c0392b;
+  --color-danger-bg: #fbe7e3;
+  --color-info: #2f6fc9;
+  --color-info-bg: #e3edfb;
+
+  /* Severity */
+  --sev-low: #5fa470;
+  --sev-mod: #d29c2a;
+  --sev-high: #d96e2a;
+  --sev-crit: #b83549;
+
+  /* Typography */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(20, 30, 45, 0.05);
+  --shadow-sm: 0 2px 6px rgba(20, 30, 45, 0.06);
+  --shadow-md: 0 8px 24px rgba(20, 30, 45, 0.08);
+  --shadow-lg: 0 16px 40px rgba(20, 30, 45, 0.12);
+
+  /* Spacing helpers */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 56px;
+
+  /* Layout */
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+  --container-w: 1200px;
+}
