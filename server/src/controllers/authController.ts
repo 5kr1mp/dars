@@ -6,8 +6,13 @@ import { hash, compareHash } from "../utils/hash.js";
 import { isUserRole, type JwtUserPayload} from "../config/types.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
-interface PasswordRow extends RowDataPacket {
+interface PasswordLookupResult extends RowDataPacket {
+    id : number;
+    email : string;
     password : string;
+    user_role : string;
+    first_name : string;
+    last_name : string;
 }
 
 export async function login(req : Request, res : Response) {
@@ -25,12 +30,12 @@ export async function login(req : Request, res : Response) {
     }
 
     const conn = await getConn();
-    const [rows] = await conn.execute<PasswordRow[]>(
-        'select id, first_name, middle_name, last_name, role, password from staff where email=?',
+    const [results] : any = await conn.execute(
+        'CALL sp_staff_login_lookup(?)',
         [email.trim().toLowerCase()]
     );
 
-    const user = rows[0];
+    const user = results[0][0] as PasswordLookupResult | undefined;
 
     if (!user) {
         sendError(res, 401, "Invalid email or password");
@@ -68,8 +73,7 @@ export async function register(req : Request, res : Response){
         firstName,
         lastName,
         middleName,
-        userRole,
-        contactNumber
+        userRole
     } = req.body;
 
     // check required fields
@@ -84,25 +88,30 @@ export async function register(req : Request, res : Response){
         return;
     }
 
+
   try {
     const hashedPw = await hash(password);
 
     const conn = await getConn();
-    
-    const [result] = await conn.execute(
-        `INSERT INTO staff (email, password, first_name, last_name, middle_name, user_role, contact_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [email, hashedPw, firstName, lastName, middleName || null, userRole, contactNumber || null]
+
+    const [result]:any = await conn.execute(
+        'CALL sp_staff_create(?, ?, ?, ?, ?, ?, ?)',
+        [
+            email.trim().toLowerCase(),
+            hashedPw,
+            firstName.trim(),
+            middleName?.trim() || null,
+            lastName.trim(),
+            userRole
+        ]
     );
 
     const newStaff = {
-        id: (result as any).insertId,
         email,
         firstName,
         lastName,
         middleName,
-        role: userRole,
-        contactNumber
+        role: userRole
     };
 
     sendSuccess(res, 201, "Signup successful", newStaff);
@@ -111,6 +120,11 @@ export async function register(req : Request, res : Response){
             sendError(res, 409, "Email already exists");
             return;
         }
+        
+        if (err.sqlMessage) {
+            sendError(res, 400, err.sqlMessage);
+            return;
+        }
         sendError(res, 500, err.message);
-    }
+    } 
 }
