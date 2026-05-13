@@ -139,3 +139,9 @@ export interface CreateResolvedReport {
   report_id: string;
   resolution_summary: string;
 }
+export interface AbuseType {
+  abuse_name: string;
+  abuse_description?: string;
+  severity: number;
+  law_reference: string;
+}
