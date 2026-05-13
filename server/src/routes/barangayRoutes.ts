@@ -1,17 +1,20 @@
 import { Router } from "express";
-import { getConn } from "../config/db.js";
+import {
+    createBarangay,
+    getBarangays,
+    getBarangayById,
+    updateBarangay,
+} from "../controllers/barangayController.js";
+import { authenticate, authorizeRole } from "../middleware/auth.js";
 
 const router = Router();
 
-router.route('/')
-    .get( async (req,res) => {
+router.route("/")
+.get(getBarangays)
+.post(authenticate, authorizeRole("system_admin", "admin"), createBarangay);
 
-        const conn = await getConn();
-
-        const rows = await conn.query('SELECT * FROM vw_barangay');
-
-        res.status(200).json(rows[0])
-    })
-
+router.route("/:id")
+.get(getBarangayById)
+.put(authenticate, authorizeRole("system_admin", "admin"), updateBarangay);
 
 export default router;
