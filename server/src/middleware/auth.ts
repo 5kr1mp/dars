@@ -1,12 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import type { JwtUserPayload,AuthRequest } from "../config/types.js";
+import type { JwtUserPayload,AuthRequest, UserRole } from "../config/types.js";
 import { sendError } from "../utils/response.js";
 
-export const authMiddleware = async (req : AuthRequest, res : Response, next : NextFunction) => {
+export const authenticate = async (req : AuthRequest, res : Response, next : NextFunction) => {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader){
+    if (!authHeader || !authHeader.startsWith("Bearer ")){
         sendError(res, 401, "Missing authorization header");
         return;
     }
@@ -31,3 +31,39 @@ export const authMiddleware = async (req : AuthRequest, res : Response, next : N
         sendError(res, 403, "Invalid or Expired Token");
     }
 }
+
+export const authorizeRole = (...allowedRoles : UserRole[]) => {
+    return (req: AuthRequest, res: Response, next : NextFunction){
+        if (!req.user){
+            sendError(res,401,"Unauthorized")
+            return;
+        }
+
+        if (!allowedRoles.includes(req.user.user_role)){
+            sendError(res,403,"Forbidden")
+        }
+
+        next();
+    }
+}
+
+
+export const authorizeOwner = (getResourceUserId: (req: any) => Promise<number> | number) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const resourceUserId = await getResourceUserId(req);
+
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (req.user.staff_id !== resourceUserId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      next();
+    } catch (err) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  };
+};
