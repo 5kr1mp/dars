@@ -63,7 +63,6 @@ export async function login(req : Request, res : Response) {
 
     const {password : pw, ...safeUser} = user;
     
-    sendSuccess(res, 200, "Login successful", { token, safeUser });
+    conn.end();
+    sendSuccess(res, 200, "Login successful", { token, safe_user : safeUser });
 }
-
-
