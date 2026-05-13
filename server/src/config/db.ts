@@ -7,6 +7,6 @@ const config = {
     password : process.env.DB_PASSWORD || '' 
 }
 
-export async function getConn(){
+export async function getConn() : Promise<mysql.Connection>{
     return await mysql.createConnection(config);
 }

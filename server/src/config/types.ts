@@ -2,6 +2,12 @@ import type { Request } from "express";
 
 export type UserRole = "system_admin" | "admin" | "operator";
 
+export enum UserRoleEnum {
+    SystemAdmin = "system_admin",
+    Admin = "admin",
+    Operator = "operator"
+}
+
 export function isUserRole(value : any): value is UserRole {
     return [
       "system_admin",
@@ -27,6 +33,14 @@ export interface CreateStaff {
   last_name: string;
   user_role: UserRole;
   contact_number?: string;
+}
+
+export interface Staff{
+  id : number;
+  email : string;
+  full_name : string;
+  role : UserRole;
+  contact_number? : string;
 }
 
 export interface CreateBarangay {
