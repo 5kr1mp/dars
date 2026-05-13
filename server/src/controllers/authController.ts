@@ -1,9 +1,10 @@
-import type { NextFunction, Request,Response } from "express"
+import type { Request,Response } from "express"
 import type { RowDataPacket } from "mysql2";
 import jwt from "jsonwebtoken";
 import { getConn } from "../config/db.js";
 import { hash, compareHash } from "../utils/hash.js";
 import { isUserRole, type JwtUserPayload} from "../config/types.js";
+import { sendSuccess, sendError } from "../utils/response.js";
 
 interface PasswordRow extends RowDataPacket {
     password : string;
@@ -12,14 +13,14 @@ interface PasswordRow extends RowDataPacket {
 export async function login(req : Request, res : Response) {
     const {email,password} = req.body;
     if (!email || !password){
-        res.status(400).json({error : "email and password required"});
+        sendError(res, 400, "Email and password required");
         return;
     }
 
     const JWT_SECRET : jwt.Secret = process.env.JWT_SECRET || '';
 
     if (!JWT_SECRET){
-        res.status(500).json({error : "Missing JWT Secret"})
+        sendError(res, 500, "Missing JWT Secret");
         return;
     }
 
@@ -32,9 +33,7 @@ export async function login(req : Request, res : Response) {
     const user = rows[0];
 
     if (!user) {
-        res.status(401).json({
-            error: 'Invalid email or password'
-        });
+        sendError(res, 401, "Invalid email or password");
         return;
     }
 
@@ -44,9 +43,7 @@ export async function login(req : Request, res : Response) {
     );
 
     if (!valid) {
-        res.status(401).json({
-            error: 'Invalid email or password'
-        });
+        sendError(res, 401, "Invalid email or password");
         return;
     }
 
@@ -61,7 +58,7 @@ export async function login(req : Request, res : Response) {
 
     const {password : pw, ...safeUser} = user;
     
-    res.status(200).json({token,safeUser})
+    sendSuccess(res, 200, "Login successful", { token, safeUser });
 }
 
 export async function register(req : Request, res : Response){
@@ -77,14 +74,15 @@ export async function register(req : Request, res : Response){
 
     // check required fields
     if (!email || !password || !firstName || !lastName || !userRole){
-        return res.status(400).json({error: "Missing some of the required fields : [email,pw,firstName,lastName,userRole]"})
+        sendError(res, 400, "Missing required fields: email, pw, firstName, lastName, userRole");
+        return;
     }
 
     // validate role
     if (!isUserRole(userRole)){
-        return res.status(400).json({error : "Invalid role"})
+        sendError(res, 400, "Invalid role");
+        return;
     }
-
 
   try {
     const hashedPw = await hash(password);
@@ -100,7 +98,6 @@ export async function register(req : Request, res : Response){
     const newStaff = {
         id: (result as any).insertId,
         email,
-        password: hashedPw,
         firstName,
         lastName,
         middleName,
@@ -108,11 +105,12 @@ export async function register(req : Request, res : Response){
         contactNumber
     };
 
-        res.status(201).json({ message: "Signup successful", staff: newStaff });
+    sendSuccess(res, 201, "Signup successful", newStaff);
     } catch (err: any) {
         if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "Email already exists" });
+            sendError(res, 409, "Email already exists");
+            return;
         }
-        res.status(500).json({ error: err.message });
+        sendError(res, 500, err.message);
     }
 }
