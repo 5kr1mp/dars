@@ -86,3 +86,40 @@ export const getMe = async (req : AuthRequest, res : Response) => {
 
     sendSuccess(res,200,"Staff member retrieved successfully", staff);  
 }
+
+export const createStaff = async (req : Request, res : Response) => {
+    const {
+        email,
+        password,
+        firstName,
+        lastName,
+        middleName,
+        userRole,
+        contactNumber
+    } = req.body;
+
+    // check required fields
+    if (!email || !password || !firstName || !lastName || !userRole){
+        sendError(res, 400, "Missing required fields: email, password, firstName, lastName, userRole");
+        return;
+    }
+
+    const conn = await getConn();
+
+    try {
+        const [result] = await conn.execute<RowDataPacket[][]>(
+            'call sp_create_staff(?,?,?,?,?,?,?)',
+            [email, password, firstName, middleName || null, lastName, userRole, contactNumber || null]
+        );
+
+        const createdStaff = (result as any)?.[0]?.[0] as Staff;
+        sendSuccess(res, 201, "Staff member created successfully", createdStaff);
+    } catch (error : any) {
+        if (error.code === "ER_DUP_ENTRY"){
+            sendError(res, 409, "Email already exists");
+        } else {
+            console.error("Error creating staff:", error);
+            sendError(res, 500, "Internal Server Error");
+        }
+    } 
+}
