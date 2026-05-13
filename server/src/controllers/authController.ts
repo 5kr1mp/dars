@@ -6,13 +6,13 @@ import { hash, compareHash } from "../utils/hash.js";
 import { isUserRole, type JwtUserPayload, type UserRole} from "../config/types.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
-interface PasswordRow extends RowDataPacket {
+interface PasswordLookupResult extends RowDataPacket {
     id : number;
+    email : string;
+    password : string;
+    user_role : string;
     first_name : string;
-    middle_name : string | null;
     last_name : string;
-    role : UserRole;
-    password : string;  
 }
 
 export async function login(req : Request, res : Response) {
@@ -30,12 +30,12 @@ export async function login(req : Request, res : Response) {
     }
 
     const conn = await getConn();
-    const [rows] = await conn.execute<PasswordRow[]>(
-        'select id, first_name, middle_name, last_name, role, password from staff where email=?',
+    const [results] : any = await conn.execute(
+        'CALL sp_staff_login_lookup(?)',
         [email.trim().toLowerCase()]
     );
 
-    const user = rows[0];
+    const user = results[0][0] as PasswordLookupResult | undefined;
 
     if (!user) {
         sendError(res, 401, "Invalid email or password");
@@ -63,59 +63,6 @@ export async function login(req : Request, res : Response) {
 
     const {password : pw, ...safeUser} = user;
     
-    sendSuccess(res, 200, "Login successful", { token, safeUser });
-}
-
-export async function register(req : Request, res : Response){
-    const {
-        email,
-        pw : password,
-        firstName,
-        lastName,
-        middleName,
-        userRole,
-        contactNumber
-    } = req.body;
-
-    // check required fields
-    if (!email || !password || !firstName || !lastName || !userRole){
-        sendError(res, 400, "Missing required fields: email, pw, firstName, lastName, userRole");
-        return;
-    }
-
-    // validate role
-    if (!isUserRole(userRole)){
-        sendError(res, 400, "Invalid role");
-        return;
-    }
-
-  try {
-    const hashedPw = await hash(password);
-
-    const conn = await getConn();
-    
-    const [result] = await conn.execute(
-        `INSERT INTO staff (email, password, first_name, last_name, middle_name, user_role, contact_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [email, hashedPw, firstName, lastName, middleName || null, userRole, contactNumber || null]
-    );
-
-    const newStaff = {
-        id: (result as any).insertId,
-        email,
-        firstName,
-        lastName,
-        middleName,
-        role: userRole,
-        contactNumber
-    };
-
-    sendSuccess(res, 201, "Signup successful", newStaff);
-    } catch (err: any) {
-        if (err.code === "ER_DUP_ENTRY") {
-            sendError(res, 409, "Email already exists");
-            return;
-        }
-        sendError(res, 500, err.message);
-    }
+    conn.end();
+    sendSuccess(res, 200, "Login successful", { token, safe_user : safeUser });
 }
