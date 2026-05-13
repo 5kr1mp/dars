@@ -72,6 +72,15 @@ export interface CreateOffender {
   barangay_id?: number;
 }
 
+export interface Offender {
+  offender_id: number;
+  full_name: string;
+  sex?: sex;
+  contact_number?: string;
+  address?: string;
+  barangay_name?: string;  
+}
+
 export type sex = "Male" | "Female" | "Other";
 
 export interface CreateResponderBody {
@@ -145,3 +154,4 @@ export interface AbuseType {
   severity: number;
   law_reference: string;
 }
+
