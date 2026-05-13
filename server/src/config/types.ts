@@ -8,6 +8,8 @@ export enum UserRoleEnum {
     Operator = "operator"
 }
 
+export const ValidReportStatus : ReportStatus[] = ["Reported","Dispatched","Under Investigation","Resolved"]
+
 export function isUserRole(value : any): value is UserRole {
     return [
       "system_admin",

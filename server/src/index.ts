@@ -8,6 +8,7 @@ import dispatchRoute from './routes/dispatchRoutes.js';
 import offenderRoute from './routes/offenderRoutes.js';
 import responderRoute from './routes/responderRoutes.js';
 import victimRoute from './routes/victimRoutes.js';
+import reportRoute from './routes/reportRoutes.js';
  
 const app = express();
  
@@ -21,6 +22,7 @@ app.use('/auth',authRoute);
 app.use('/dispatch',dispatchRoute);
 app.use('/responder',responderRoute);
 app.use('/victim',victimRoute);
+app.use('/reports',reportRoute);
 
 app.listen(3000, async () => {
     console.log("listening on http://localhost:3000");
