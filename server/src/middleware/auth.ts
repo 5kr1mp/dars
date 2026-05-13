@@ -33,7 +33,7 @@ export const authenticate = async (req : AuthRequest, res : Response, next : Nex
 }
 
 export const authorizeRole = (...allowedRoles : UserRole[]) => {
-    return (req: AuthRequest, res: Response, next : NextFunction){
+    return (req: AuthRequest, res: Response, next : NextFunction) => {
         if (!req.user){
             sendError(res,401,"Unauthorized")
             return;
@@ -46,24 +46,3 @@ export const authorizeRole = (...allowedRoles : UserRole[]) => {
         next();
     }
 }
-
-
-export const authorizeOwner = (getResourceUserId: (req: any) => Promise<number> | number) => {
-  return async (req: any, res: any, next: any) => {
-    try {
-      const resourceUserId = await getResourceUserId(req);
-
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      if (req.user.staff_id !== resourceUserId) {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-
-      next();
-    } catch (err) {
-      return res.status(500).json({ message: "Server error" });
-    }
-  };
-};
