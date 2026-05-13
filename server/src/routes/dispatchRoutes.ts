@@ -19,7 +19,7 @@ router.route("/:id")
     .delete(deleteDispatch);
 
 router.route("/:id/status")
-    .patch(updateDispatchStatus);
+    .put(updateDispatchStatus);
 
 router.route("/report/:report_id")
     .get(getDispatchesByReport);
