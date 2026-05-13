@@ -58,59 +58,6 @@ export async function login(req : Request, res : Response) {
 
     const {password : pw, ...safeUser} = user;
     
-    sendSuccess(res, 200, "Login successful", { token, safeUser });
-}
-
-export async function register(req : Request, res : Response){
-    const {
-        email,
-        pw : password,
-        firstName,
-        lastName,
-        middleName,
-        userRole,
-        contactNumber
-    } = req.body;
-
-    // check required fields
-    if (!email || !password || !firstName || !lastName || !userRole){
-        sendError(res, 400, "Missing required fields: email, pw, firstName, lastName, userRole");
-        return;
-    }
-
-    // validate role
-    if (!isUserRole(userRole)){
-        sendError(res, 400, "Invalid role");
-        return;
-    }
-
-  try {
-    const hashedPw = await hash(password);
-
-    const conn = await getConn();
-    
-    const [result] = await conn.execute(
-        `INSERT INTO staff (email, password, first_name, last_name, middle_name, user_role, contact_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [email, hashedPw, firstName, lastName, middleName || null, userRole, contactNumber || null]
-    );
-
-    const newStaff = {
-        id: (result as any).insertId,
-        email,
-        firstName,
-        lastName,
-        middleName,
-        role: userRole,
-        contactNumber
-    };
-
-    sendSuccess(res, 201, "Signup successful", newStaff);
-    } catch (err: any) {
-        if (err.code === "ER_DUP_ENTRY") {
-            sendError(res, 409, "Email already exists");
-            return;
-        }
-        sendError(res, 500, err.message);
-    }
+    conn.end();
+    sendSuccess(res, 200, "Login successful", { token, safe_user : safeUser });
 }
