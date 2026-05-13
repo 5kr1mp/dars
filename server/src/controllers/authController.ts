@@ -3,7 +3,7 @@ import type { RowDataPacket } from "mysql2";
 import jwt from "jsonwebtoken";
 import { getConn } from "../config/db.js";
 import { hash, compareHash } from "../utils/hash.js";
-import { isUserRole, type JwtUserPayload} from "../config/types.js";
+import { isUserRole, type JwtUserPayload, type UserRole} from "../config/types.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
 interface PasswordLookupResult extends RowDataPacket {

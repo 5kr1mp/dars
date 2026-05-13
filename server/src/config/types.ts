@@ -50,6 +50,13 @@ export interface CreateBarangay {
   radius?: number;
 }
 
+export interface Barangay {
+  id: number;
+  barangay_name: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+}
 export interface CreateVictim {
   first_name: string;
   last_name: string;
