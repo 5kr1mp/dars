@@ -7,6 +7,7 @@ import authRoute from './routes/authRoutes.js';
 import dispatchRoute from './routes/dispatchRoutes.js';
 import offenderRoute from './routes/offenderRoutes.js';
 import responderRoute from './routes/responderRoutes.js';
+import victimRoute from './routes/victimRoutes.js';
  
 const app = express();
  
@@ -19,6 +20,7 @@ app.use('/barangay',barangayRoute);
 app.use('/auth',authRoute);
 app.use('/dispatch',dispatchRoute);
 app.use('/responder',responderRoute);
+app.use('/victim',victimRoute);
 
 app.listen(3000, async () => {
     console.log("listening on http://localhost:3000");
