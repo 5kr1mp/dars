@@ -1,5 +1,5 @@
 import type { AuthRequest, Staff } from "../config/types.js";
-import type { RowDataPacket } from "mysql2";
+import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Request,Response,NextFunction} from "express";
 import { getConn } from "../config/db.js";
 import { sendError, sendSuccess, sendResponse} from "../utils/response.js";
@@ -85,10 +85,11 @@ export const getMe = async (req : AuthRequest, res : Response) => {
         return;
     }
 
+    conn.end()
     sendSuccess(res,200,"Staff member retrieved successfully", staff);  
 }
 
-export async function createStaff(req : Request, res : Response){
+export const createStaff = async(req : Request, res : Response) => {
     const {
         email,
         pw : password,
@@ -116,35 +117,35 @@ export async function createStaff(req : Request, res : Response){
         return;
     }
 
+    let conn
+    try {
+        const hashedPw = await hash(password);
 
-  try {
-    const hashedPw = await hash(password);
+        conn = await getConn();
 
-    const conn = await getConn();
+        const [result]:any = await conn.execute(
+            'CALL sp_staff_create(?, ?, ?, ?, ?, ?, ?)',
+            [
+                email.trim().toLowerCase(),
+                hashedPw,
+                firstName.trim(),
+                middleName?.trim() || null,
+                lastName.trim(),
+                userRole,
+                contact_number || null
+            ]
+        );
 
-    const [result]:any = await conn.execute(
-        'CALL sp_staff_create(?, ?, ?, ?, ?, ?, ?)',
-        [
-            email.trim().toLowerCase(),
-            hashedPw,
-            firstName.trim(),
-            middleName?.trim() || null,
-            lastName.trim(),
-            userRole,
-            contact_number || null
-        ]
-    );
+        const newStaff = {
+            email,
+            firstName,
+            lastName,
+            middleName,
+            role: userRole,
+            contactNumber: contact_number || null
+        };
 
-    const newStaff = {
-        email,
-        firstName,
-        lastName,
-        middleName,
-        role: userRole,
-        contactNumber: contact_number || null
-    };
-
-    sendSuccess(res, 201, "Signup successful", newStaff);
+        sendSuccess(res, 201, "Signup successful", newStaff);
     } catch (err: any) {
         if (err.code === "ER_DUP_ENTRY") {
             sendError(res, 409, "Email already exists");
@@ -152,14 +153,18 @@ export async function createStaff(req : Request, res : Response){
         }
         
         if (err.sqlMessage) {
-            sendError(res, 400, err.sqlMessage);
+            sendError(res, 400, err.sqlMessage)
             return;
         }
         sendError(res, 500, err.message);
-    } 
+    } finally {
+        if (conn){
+            await conn.end();
+        }
+    }
 }
 
-export async function updateStaff(req : AuthRequest, res : Response){
+export const updateStaff = async (req : AuthRequest, res : Response) => {
     const { id } = req.params;
     const {
         email,
@@ -176,14 +181,15 @@ export async function updateStaff(req : AuthRequest, res : Response){
         return;
     }
 
+    let conn;
     try {
         // If updating role, must be an admin or system admin
         if (userRole && !isUserRole(userRole)) {
-            sendError(res, 400, "Invalid role");
+            sendError(res, 400, "Invalid role")
             return;
         }
 
-        const conn = await getConn();
+        conn = await getConn();
 
         const [rows] = await conn.execute<StaffRow[]>(
             'SELECT id FROM vw_staff WHERE id = ?',
@@ -218,10 +224,14 @@ export async function updateStaff(req : AuthRequest, res : Response){
         }
 
         if (err.sqlMessage) {
-            sendError(res, 400, err.sqlMessage);
+            sendError(res, 400, err.sqlMessage)
             return;
         }
-        sendError(res, 500, err.message);
+        sendError(res, 500, err.message)
+    } finally {
+        if (conn){
+            await conn.end();
+        }
     }
 }
 
@@ -232,8 +242,8 @@ export async function updateStaff(req : AuthRequest, res : Response){
  * @param req AuthRequest with user property from middleware
  * @param res 
  */
-export async function updatePassword(req : AuthRequest, res : Response){
-    const { oldPassword, newPassword } = req.body;
+export const changePassword = async (req : AuthRequest, res : Response) => {
+    const { oldPassword, newPassword } = req.body
     const user = req.user;
 
     // validate user is authenticated
@@ -244,7 +254,7 @@ export async function updatePassword(req : AuthRequest, res : Response){
 
     // validate required fields
     if (!oldPassword || !newPassword) {
-        sendError(res, 400, "Missing required fields: oldPassword, newPassword");
+        sendError(res, 400, "Missing required fields: oldPassword, newPassword")
         return;
     }
 
@@ -253,9 +263,9 @@ export async function updatePassword(req : AuthRequest, res : Response){
         sendError(res, 400, "New password must be at least 8 characters");
         return;
     }
-
+    let conn;
     try {
-        const conn = await getConn();
+        conn = await getConn();
 
         // Get current password hash
         const [rows]: any = await conn.execute(
@@ -264,7 +274,7 @@ export async function updatePassword(req : AuthRequest, res : Response){
         );
 
         if (rows.length === 0) {
-            sendError(res, 404, "Staff account not found");
+            sendError(res, 404, "Staff account not found")
             return;
         }
 
@@ -273,7 +283,7 @@ export async function updatePassword(req : AuthRequest, res : Response){
         // Verify old password
         const isPasswordValid = await compareHash(oldPassword, currentPasswordHash);
         if (!isPasswordValid) {
-            sendError(res, 401, "Old password is incorrect");
+            sendError(res, 401, "Old password is incorrect")
             return;
         }
 
@@ -286,12 +296,53 @@ export async function updatePassword(req : AuthRequest, res : Response){
             [user.staff_id, hashedNewPassword]
         );
 
-        sendSuccess(res, 200, "Password updated successfully", null);
+        sendSuccess(res, 200, "Password updated successfully", null)
     } catch (err: any) {
         if (err.sqlMessage) {
             sendError(res, 400, err.sqlMessage);
             return;
         }
-        sendError(res, 500, err.message);
+        sendError(res, 500, err.message)
+    } finally {
+        if (conn){
+            await conn.end();
+        }
     }
+}
+
+export const deleteStaff = async (req : AuthRequest, res : Response) => {
+    const {id} = req.params;
+
+    if (!id || isNaN(Number(id))){
+        sendError(res,400,"Invalid staff ID")
+        return
+    }
+
+    let conn;
+    try {
+        conn = await getConn();
+    
+        const [result] = await conn.execute<ResultSetHeader>(`
+            DELETE FROM vw_staff WHERE id = ?;    
+        `, [id]);
+
+        if (result.affectedRows === 0){
+            sendError(res,404,"Staff not found")
+            return;
+        }
+
+        sendSuccess(res,204,"Staff successfully deleted",null)
+        
+    } catch (err : any){
+        if (err.sqlMessage){
+            sendError(res,400,err.sqlMessage)
+            return
+        }
+        sendError(res,500,err.message)
+    } finally {
+        if (conn){
+            await conn.end();
+        }
+    }
+
 }
