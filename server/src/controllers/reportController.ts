@@ -3,6 +3,7 @@ import type { RowDataPacket } from "mysql2";
 import type { AuthRequest, ReportStatus } from "../config/types.js";
 import { getConn } from "../config/db.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import { getIo } from "../sockets/reportSockets.js";
 
 const VALID_STATUSES: ReportStatus[] = ['Reported', 'Dispatched', 'Under Investigation', 'Resolved'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -112,6 +113,16 @@ export const createReport = async (req: AuthRequest, res: Response) => {
         );
 
         const reportId = result[0][0]?.new_report_id;
+
+        getIo()?.emit('report:new', {
+            report_id: reportId,
+            barangay_id,
+            abuse_name,
+            latitude,
+            longitude,
+            reported_at: new Date().toISOString()
+        });
+
         sendSuccess(res, 201, 'Report created successfully', { report_id: reportId });
     } catch (err: any) {
         if (err.sqlMessage) {
