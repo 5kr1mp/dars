@@ -108,13 +108,27 @@ export interface UpdateReportStatus {
 export type DispatchStatus =
     "Assigned"
   | "On The Way"
-  | "On Scene"
+  | "Arrived"
   | "Completed";
 
 export interface CreateDispatch {
   report_id: string;
   responder_id: number;
   remarks?: string;
+}
+
+export interface Dispatch {
+  dispatch_id: number;
+  dispatch_status: DispatchStatus;
+  dispatch_time: Date;
+  remarks?: string;
+  report_id: string;
+  report_status: ReportStatus;
+  barangay_name: string;
+  responder_id: number;
+  responder_name: string;
+  agency?: string;
+  responder_contact?: string;
 }
 
 export interface UpdateDispatchStatus {
