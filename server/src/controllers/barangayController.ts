@@ -4,7 +4,7 @@ import { getConn } from "../config/db.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import type { Barangay, CreateBarangay } from "../config/types.js";
 
-interface BarangayRow extends RowDataPacket, Barangay {}
+interface BarangayRow extends RowDataPacket, Barangay {};
 
 export async function createBarangay(req: Request, res: Response) {
     const { barangay_name, latitude, longitude, radius } = req.body;
