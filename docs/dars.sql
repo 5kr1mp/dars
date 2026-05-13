@@ -993,7 +993,7 @@ END$$
 -- =============================================
 -- REPORT procedures
 -- =============================================
-
+--- UPDATED PROCEDUR
 DROP PROCEDURE IF EXISTS sp_report_create$$
 CREATE PROCEDURE sp_report_create(
     IN p_victim_id          INT,
@@ -1005,11 +1005,15 @@ CREATE PROCEDURE sp_report_create(
     IN p_report_description TEXT
 )
 BEGIN
+    DECLARE v_id CHAR(36);
+    SET v_id = UUID();
+
     INSERT INTO report
-        (victim_id, offender_id, abuse_name, barangay_id, latitude, longitude, report_description)
+        (id, victim_id, offender_id, abuse_name, barangay_id, latitude, longitude, report_description)
     VALUES
-        (p_victim_id, p_offender_id, p_abuse_name, p_barangay_id, p_latitude, p_longitude, p_report_description);
-    SELECT LAST_INSERT_ID() AS new_report_id;
+        (v_id, p_victim_id, p_offender_id, p_abuse_name, p_barangay_id, p_latitude, p_longitude, p_report_description);
+
+    SELECT v_id AS new_report_id;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_report_get$$
