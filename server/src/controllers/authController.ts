@@ -3,11 +3,16 @@ import type { RowDataPacket } from "mysql2";
 import jwt from "jsonwebtoken";
 import { getConn } from "../config/db.js";
 import { hash, compareHash } from "../utils/hash.js";
-import { isUserRole, type JwtUserPayload} from "../config/types.js";
+import { isUserRole, type JwtUserPayload, type UserRole} from "../config/types.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
 interface PasswordRow extends RowDataPacket {
-    password : string;
+    id : number;
+    first_name : string;
+    middle_name : string | null;
+    last_name : string;
+    role : UserRole;
+    password : string;  
 }
 
 export async function login(req : Request, res : Response) {
