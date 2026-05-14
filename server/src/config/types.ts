@@ -38,10 +38,10 @@ export interface CreateStaff {
 }
 
 export interface Staff{
-  id : number;
+  staff_id : number;
   email : string;
   full_name : string;
-  role : UserRole;
+  user_role : UserRole;
   contact_number? : string;
 }
 

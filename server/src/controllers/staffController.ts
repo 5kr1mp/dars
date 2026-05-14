@@ -12,7 +12,7 @@ export const getAllStaff = async (req : Request, res : Response) => {
     const {search,role} = req.query
 
     const conn = await getConn();
-    let query = 'select id, email, full_name, role, contact_number from vw_staff where 1=1';
+    let query = 'select staff_id, email, full_name, user_role, contact_number from vw_staff where 1=1';
     const params : any[] = [];
 
     // search by email or full name
@@ -28,7 +28,7 @@ export const getAllStaff = async (req : Request, res : Response) => {
             sendError(res,400,"Invalid role");
             return;
         }
-        query += ' and role = ?';
+        query += ' and user_role = ?';
         params.push(role);
     }
 
@@ -47,7 +47,7 @@ export const getStaffById = async (req : Request, res : Response) => {
     
     const conn = await getConn();
     const [rows] = await conn.execute<StaffRow[]>(
-        'select id, email, full_name, role, contact_number from vw_staff where id=?',
+        'select staff_id, email, full_name, user_role, contact_number from vw_staff where staff_id=?',
         [id]
     );
 
@@ -75,7 +75,7 @@ export const getMe = async (req : AuthRequest, res : Response) => {
     
     const conn = await getConn();
     const [rows] = await conn.execute<StaffRow[]>(
-        'select id, email, full_name, role, contact_number from vw_staff where id=?',
+        'select staff_id, email, full_name, user_role, contact_number from vw_staff where staff_id=?',
         [user!.staff_id]
     );
 
@@ -192,7 +192,7 @@ export const updateStaff = async (req : AuthRequest, res : Response) => {
         conn = await getConn();
 
         const [rows] = await conn.execute<StaffRow[]>(
-            'SELECT id FROM vw_staff WHERE id = ?',
+            'SELECT staff_id FROM vw_staff WHERE staff_id = ?',
             [id]
         );
 
@@ -322,9 +322,10 @@ export const deleteStaff = async (req : AuthRequest, res : Response) => {
     try {
         conn = await getConn();
     
-        const [result] = await conn.execute<ResultSetHeader>(`
-            DELETE FROM vw_staff WHERE id = ?;    
-        `, [id]);
+        const [result] = await conn.execute<ResultSetHeader>(
+            'DELETE FROM staff WHERE id = ?',
+            [id]
+        );
 
         if (result.affectedRows === 0){
             sendError(res,404,"Staff not found")

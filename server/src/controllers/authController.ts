@@ -54,8 +54,8 @@ export async function login(req : Request, res : Response) {
 
     const payload : JwtUserPayload = {
         staff_id : user.id,
-        user_role : user.role
-    } 
+        user_role : user.user_role as UserRole
+    }
 
     const token = jwt.sign(payload,JWT_SECRET,{
         expiresIn : "1d"
