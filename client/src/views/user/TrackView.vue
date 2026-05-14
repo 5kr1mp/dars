@@ -136,18 +136,6 @@ function entryStatus(t: HistoryItem) {
             <dt>Filed</dt><dd>{{ formatDate(result.reported_at) }}</dd>
             <dt>Barangay</dt><dd>{{ result.barangay_name }}</dd>
           </dl>
-          <div class="contact-block">
-            <strong>Need to add information?</strong>
-            <p class="muted small">
-              You can add details, send a message to your assigned responder, or escalate
-              if your situation has changed.
-            </p>
-            <div class="row" style="gap: 8px; flex-wrap: wrap">
-              <AppButton variant="secondary" size="sm">Add details</AppButton>
-              <AppButton variant="secondary" size="sm">Message responder</AppButton>
-              <AppButton variant="accent" size="sm">Escalate / urgent</AppButton>
-            </div>
-          </div>
         </div>
 
         <!-- Timeline -->
@@ -213,12 +201,6 @@ function entryStatus(t: HistoryItem) {
 }
 .kv dt { color: var(--color-text-soft); font-weight: 600; }
 .kv dd { margin: 0; }
-
-.contact-block {
-  margin-top: 6px;
-  padding-top: 6px;
-}
-.contact-block p { margin: 4px 0 10px; }
 
 .timeline { list-style: none; padding: 0; margin: 14px 0 0; position: relative; }
 .timeline::before {
