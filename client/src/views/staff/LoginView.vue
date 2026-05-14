@@ -1,25 +1,29 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import AppButton from '../../components/common/AppButton.vue'
 import AppLogo from '../../components/common/AppLogo.vue'
+import { useAuth } from '../../services/auth'
 
-const router = useRouter()
+const { login: authLogin } = useAuth()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
-function login() {
+async function login() {
   if (!email.value || !password.value) {
     error.value = 'Please enter your email and password.'
     return
   }
   error.value = ''
   loading.value = true
-  setTimeout(() => {
-    router.push('/staff/dashboard')
-  }, 600)
+  try {
+    await authLogin(email.value, password.value)
+  } catch (e: any) {
+    error.value = e.message ?? 'Invalid credentials. Please try again.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -31,7 +35,7 @@ function login() {
           <span class="brand__mark">
             <AppLogo :size="20" variant="white" />
           </span>
-          <strong>SafeReport</strong>
+          <strong>Domestic Abuse Report System</strong>
         </div>
         <h1>Faster, kinder responses to domestic abuse.</h1>
         <p>
@@ -101,31 +105,12 @@ function login() {
             />
           </div>
 
-          <div class="auth__meta">
-            <label class="check">
-              <input type="checkbox" /> Keep me signed in
-            </label>
-            <a href="#" class="forgot-link">Forgot password?</a>
-          </div>
-
           <div v-if="error" class="error" role="alert">{{ error }}</div>
 
           <AppButton type="submit" variant="primary" size="lg" block :disabled="loading">
             {{ loading ? 'Signing in…' : 'Sign in' }}
           </AppButton>
         </form>
-
-        <div class="divider"><span>or</span></div>
-
-        <button class="sso-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-            aria-hidden="true">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <path d="M2 10h20" />
-          </svg>
-          Continue with Government SSO
-        </button>
 
         <p class="auth__foot muted">
           Are you a victim or witness?
@@ -273,22 +258,6 @@ function login() {
   gap: var(--space-4);
 }
 
-.auth__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-}
-
-.forgot-link {
-  color: var(--color-primary-600);
-  text-decoration: none;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
-}
-
 .error {
   background: var(--color-danger-bg);
   color: var(--color-danger);
@@ -297,65 +266,6 @@ function login() {
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.5;
-}
-
-.check {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5, 6px);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  user-select: none;
-}
-
-/* ─── Divider ───────────────────────────────────────────── */
-.divider {
-  margin: var(--space-5) 0;
-  text-align: center;
-  position: relative;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: calc(50% - 20px);
-  height: 1px;
-  background: var(--color-border);
-}
-
-.divider::before { left: 0; }
-.divider::after { right: 0; }
-
-/* ─── SSO button ────────────────────────────────────────── */
-.sso-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-2-5, 10px) var(--space-3-5, 14px);
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-surface);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.sso-btn:hover {
-  border-color: var(--color-primary-400);
-  background: var(--color-surface-alt);
-}
-
-.sso-btn svg {
-  color: var(--color-text-muted);
-  flex-shrink: 0;
 }
 
 /* ─── Footer ────────────────────────────────────────────── */
