@@ -41,6 +41,7 @@ export const authorizeRole = (...allowedRoles : UserRole[]) => {
 
         if (!allowedRoles.includes(req.user.user_role)){
             sendError(res,403,"Forbidden")
+            return;
         }
 
         next();

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import type { RowDataPacket } from "mysql2";
 import { getConn } from "../config/db.js";
 import { sendError, sendSuccess } from "../utils/response.js";
+import type { AuthRequest } from "../config/types.js";
 
 interface VictimRow extends RowDataPacket {
     victim_id: number;
@@ -13,7 +14,7 @@ interface VictimRow extends RowDataPacket {
     created_at: string;
 }
 
-export const getAllVictims = async (req: Request, res: Response) => {
+export const getAllVictims = async (req: AuthRequest, res: Response) => {
     const { search } = req.query;
 
     let conn;
@@ -22,6 +23,12 @@ export const getAllVictims = async (req: Request, res: Response) => {
 
         let query = "SELECT * FROM vw_victim WHERE 1=1";
         const params: any[] = [];
+
+        // Operators only see victims that appear in a report from their barangay
+        if (req.user?.user_role === "operator") {
+            query += " AND victim_id IN (SELECT victim_id FROM report WHERE barangay_id = ?)";
+            params.push(req.user.barangay_id ?? -1);
+        }
 
         if (search) {
             query += " AND (full_name LIKE ? OR email LIKE ? OR contact_number LIKE ?)";
@@ -44,7 +51,7 @@ export const getAllVictims = async (req: Request, res: Response) => {
     }
 };
 
-export const getVictimById = async (req: Request, res: Response) => {
+export const getVictimById = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 
     if (!id || isNaN(Number(id))) {
@@ -55,6 +62,17 @@ export const getVictimById = async (req: Request, res: Response) => {
     let conn;
     try {
         conn = await getConn();
+
+        if (req.user?.user_role === "operator") {
+            const [own] = await conn.execute<RowDataPacket[]>(
+                "SELECT 1 FROM report WHERE victim_id = ? AND barangay_id = ? LIMIT 1",
+                [id, req.user.barangay_id ?? -1]
+            );
+            if (own.length === 0) {
+                sendError(res, 404, "Victim not found");
+                return;
+            }
+        }
 
         const [result]: any = await conn.execute("CALL sp_victim_get(?)", [id]);
         const victim = result[0][0];

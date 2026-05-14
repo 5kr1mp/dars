@@ -7,8 +7,11 @@ import {
     updateDispatchStatus,
     deleteDispatch,
 } from "../controllers/dispatchController.js";
+import { authenticate } from "../middleware/auth.js";
 
 const router = Router();
+
+router.use(authenticate);
 
 router.route("/")
     .get(getDispatches)

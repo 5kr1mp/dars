@@ -21,6 +21,7 @@ export function isUserRole(value : any): value is UserRole {
 export interface JwtUserPayload {
   staff_id: number;
   user_role: UserRole;
+  barangay_id: number | null;
 }
 
 export interface AuthRequest extends Request {
@@ -38,10 +39,10 @@ export interface CreateStaff {
 }
 
 export interface Staff{
-  id : number;
+  staff_id : number;
   email : string;
   full_name : string;
-  role : UserRole;
+  user_role : UserRole;
   contact_number? : string;
 }
 
