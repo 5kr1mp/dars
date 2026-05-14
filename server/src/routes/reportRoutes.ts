@@ -19,9 +19,9 @@ const router = Router();
 
 router.route('/')
     .get(authenticate, getAllReports)
-    .post(authenticate, createReport);
+    .post(createReport);
 
-router.get('/:id/history', authenticate, getReportStatusHistory);
+router.get('/:id/history', getReportStatusHistory);
 
 router.route('/:id/resolve')
     .post(authenticate, resolveReport)
@@ -30,7 +30,7 @@ router.route('/:id/resolve')
 router.get('/:id/resolved', authenticate, getResolvedReport);
 
 router.route('/:id')
-    .get(authenticate, getReportById)
+    .get(getReportById)
     .put(authenticate, updateReport)
     .delete(authenticate, deleteReport);
 
