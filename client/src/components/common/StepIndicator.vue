@@ -15,6 +15,7 @@ defineProps<{
         'step--done': i < current,
         'step--active': i === current,
       }"
+      :aria-current="i === current ? 'step' : undefined"
     >
       <div class="step__circle">
         <svg
@@ -40,15 +41,15 @@ defineProps<{
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   width: 100%;
 }
 .step {
   flex: 1;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
@@ -59,12 +60,12 @@ defineProps<{
 }
 .step--done {
   background: var(--color-success-bg);
-  border-color: #c5e6d3;
+  border-color: var(--color-success);
 }
 .step__circle {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
@@ -87,10 +88,12 @@ defineProps<{
 }
 .step__title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.35;
 }
 .step__desc {
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.45;
   color: var(--color-text-soft);
 }
 

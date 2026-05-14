@@ -41,7 +41,7 @@ const selected = ref<string | null>(null)
         <h1>Reports</h1>
         <p class="muted">All incident reports across your jurisdiction.</p>
       </div>
-      <div class="row" style="gap: 8px">
+      <div class="row" style="gap: var(--space-2)">
         <AppButton variant="secondary">Export CSV</AppButton>
         <AppButton variant="primary">+ New Report</AppButton>
       </div>
@@ -201,24 +201,24 @@ const selected = ref<string | null>(null)
   display: flex;
   align-items: end;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-4);
 }
 .page-head h1 { margin: 0; }
 
 .filters {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px;
-  margin-bottom: 18px;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 
 .search-input {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-alt);
@@ -232,23 +232,23 @@ const selected = ref<string | null>(null)
 
 .filter-tabs {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 4px;
+  padding: var(--space-1);
   background: var(--color-surface-alt);
   flex: 1;
   overflow-x: auto;
 }
 .tab {
   background: none; border: none;
-  padding: 7px 12px;
-  border-radius: 6px;
+  padding: var(--space-1-75, 7px) var(--space-3);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-muted);
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: var(--space-1-5, 6px);
   white-space: nowrap;
 }
 .tab.active {
@@ -260,11 +260,11 @@ const selected = ref<string | null>(null)
   background: var(--color-accent-500);
   color: #fff;
   font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 999px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
 }
 .select-mini {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5, 10px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -274,7 +274,7 @@ const selected = ref<string | null>(null)
 .layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: start;
 }
 .layout:has(.detail) { grid-template-columns: 1fr 380px; }

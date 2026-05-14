@@ -108,20 +108,20 @@ const columns: DispatchColumn[] = [
 </template>
 
 <style scoped>
-.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
 
 .board {
   display: grid;
   grid-template-columns: repeat(5, minmax(260px, 1fr));
-  gap: 14px;
+  gap: var(--space-3-5, 14px);
   overflow-x: auto;
-  padding-bottom: 10px;
+  padding-bottom: var(--space-2);
   scroll-snap-type: x proximity;
 }
 .col { scroll-snap-align: start; }
 @media (max-width: 720px) {
-  .page-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-head { flex-direction: column; align-items: flex-start; gap: var(--space-2-5, 10px); }
   .board { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 86%; }
 }
 
@@ -134,7 +134,7 @@ const columns: DispatchColumn[] = [
   min-height: 70vh;
 }
 .col__head {
-  padding: 14px 16px 10px;
+  padding: var(--space-3) var(--space-4) var(--space-2);
   display: flex; justify-content: space-between; align-items: center;
   border-bottom: 1px solid var(--color-border);
   position: relative;
@@ -152,17 +152,17 @@ const columns: DispatchColumn[] = [
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  padding: 1px 9px;
+  padding: var(--space-0-25, 1px) var(--space-2-25, 9px);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-muted);
 }
 
 .col__list {
-  padding: 12px;
+  padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2-5, 10px);
   flex: 1;
 }
 
@@ -170,17 +170,16 @@ const columns: DispatchColumn[] = [
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3-5, 14px);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: grab;
-  transition: transform 0.1s, box-shadow 0.15s, border-color 0.15s;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
 .card-item:hover {
   border-color: var(--color-primary-300);
   box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
 }
 .card-item h3 {
   font-size: 14px;
@@ -190,15 +189,15 @@ const columns: DispatchColumn[] = [
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 11px;
   background: var(--color-surface-alt);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
 }
 .responder-tag {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--space-2);
+  padding: var(--space-1-5, 6px) var(--space-2);
   background: var(--color-surface-alt);
   border-radius: var(--radius-md);
   font-size: 12px;

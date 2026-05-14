@@ -83,21 +83,21 @@ const roleColor: Record<string, string> = {
 </template>
 
 <style scoped>
-.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
 
 .stats {
   grid-template-columns: repeat(4, 1fr);
-  margin-bottom: 18px;
+  margin-bottom: var(--space-4);
 }
 .role-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .role-card strong {
   font-family: var(--font-display);
@@ -112,7 +112,7 @@ const roleColor: Record<string, string> = {
   font-weight: 600;
 }
 
-.user-cell { display: flex; align-items: center; gap: 12px; }
+.user-cell { display: flex; align-items: center; gap: var(--space-3); }
 .avatar {
   width: 34px; height: 34px;
   border-radius: 50%;
@@ -124,7 +124,7 @@ const roleColor: Record<string, string> = {
 .role {
   font-size: 12px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2-5, 10px);
   border-radius: var(--radius-full);
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);

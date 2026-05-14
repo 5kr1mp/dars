@@ -39,14 +39,14 @@ const responders = [
 
 <template>
   <div class="dashboard fade-up">
-    <div class="row row--between" style="margin-bottom: 18px">
+    <div class="row row--between" style="margin-bottom: var(--space-4)">
       <div>
-        <h1 style="margin: 0">Good morning, A. Cruz</h1>
-        <p class="muted" style="margin: 4px 0 0">
+        <h1>Good morning, A. Cruz</h1>
+        <p class="muted" style="margin: var(--space-1) 0 0">
           Here's what's happening across your assigned barangays.
         </p>
       </div>
-      <div class="row" style="gap: 8px">
+      <div class="row" style="gap: var(--space-2)">
         <AppButton variant="secondary" size="md">Export</AppButton>
         <AppButton variant="primary" size="md">+ New Report</AppButton>
       </div>
@@ -54,10 +54,10 @@ const responders = [
 
     <!-- Top stats -->
     <div class="grid stats">
-      <StatCard label="Active Reports" :value="12" delta="3 vs yesterday" trend="up" tone="primary" icon="📂" />
-      <StatCard label="Avg. Response" value="22m" delta="4m faster" trend="down" tone="success" icon="⏱️" />
-      <StatCard label="Critical Cases" :value="3" delta="1 escalated" trend="up" tone="danger" icon="🚨" />
-      <StatCard label="Resolved Today" :value="8" delta="On track" trend="flat" tone="success" icon="✅" />
+      <StatCard label="Active Reports" :value="12" delta="3 vs yesterday" trend="up" tone="primary" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z'></path><path d='M2 10h20'></path></svg>`" />
+      <StatCard label="Avg. Response" value="22m" delta="4m faster" trend="down" tone="success" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polyline points='12,6 12,12 16,14'></polyline></svg>`" />
+      <StatCard label="Critical Cases" :value="3" delta="1 escalated" trend="up" tone="danger" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'></path><line x1='12' x2='12' y1='9' y2='13'></line><line x1='12' x2='12.01' y1='17' y2='17'></line></svg>`" />
+      <StatCard label="Resolved Today" :value="8" delta="On track" trend="flat" tone="success" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22,4 12,14.01 9,11.01'></polyline></svg>`" />
     </div>
 
     <div class="grid main-grid">
@@ -68,7 +68,7 @@ const responders = [
             <h2>Recent reports</h2>
             <p class="muted small">Updated in real time</p>
           </div>
-          <div class="row" style="gap: 8px">
+          <div class="row" style="gap: var(--space-2)">
             <select class="select-mini">
               <option>All barangays</option>
               <option>Brgy. San Isidro</option>
@@ -113,7 +113,7 @@ const responders = [
       </div>
 
       <!-- Side column -->
-      <div class="col" style="gap: 16px">
+      <div class="col" style="gap: var(--space-4)">
         <!-- Live map preview -->
         <div class="card map-preview">
           <div class="card-head">
@@ -152,7 +152,7 @@ const responders = [
     <!-- Bottom: barangay & trend -->
     <div class="grid bottom-grid">
       <div class="card card--padded">
-        <div class="card-head" style="padding: 0; margin-bottom: 16px">
+        <div class="card-head" style="padding: 0; margin-bottom: var(--space-4)">
           <h2>Barangay activity</h2>
           <span class="muted small">This week</span>
         </div>
@@ -170,7 +170,7 @@ const responders = [
       </div>
 
       <div class="card card--padded">
-        <div class="card-head" style="padding: 0; margin-bottom: 16px">
+        <div class="card-head" style="padding: 0; margin-bottom: var(--space-4)">
           <h2>Reports trend</h2>
           <span class="muted small">Last 7 days</span>
         </div>
@@ -219,18 +219,27 @@ const responders = [
 </template>
 
 <style scoped>
+.dashboard {
+  display: grid;
+  gap: var(--space-6);
+}
 .dashboard h1 {
-  font-size: 26px;
+  font-size: 28px;
+  margin: 0;
 }
 
 .stats {
-  grid-template-columns: repeat(4, 1fr);
-  margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .main-grid {
+  display: grid;
   grid-template-columns: 1.6fr 1fr;
-  margin-bottom: 22px;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
   align-items: start;
 }
 
@@ -238,19 +247,28 @@ const responders = [
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
-.card-head h2 { margin: 0; font-size: 16px; }
-.recent-reports .table { font-size: 13px; }
+.card-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.recent-reports .table {
+  font-size: 13px;
+}
+
 .code-id {
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: 12px;
 }
+
 .row-link {
   background: none;
   border: none;
@@ -261,61 +279,80 @@ const responders = [
 }
 
 .select-mini {
-  padding: 6px 10px;
+  min-width: 140px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   font-size: 13px;
+  color: var(--color-text);
 }
 
-/* Map */
-.map { padding: 14px; }
+.map {
+  padding: var(--space-4);
+}
 
-/* Responders list */
-.resp-list { list-style: none; margin: 0; padding: 8px 12px; }
+.resp-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-3);
+}
 .resp-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 8px;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--color-border);
 }
-.resp-list li:last-child { border-bottom: none; }
+.resp-list li:last-child {
+  border-bottom: none;
+}
 
-/* Bottom */
 .bottom-grid {
+  display: grid;
   grid-template-columns: 1fr 1.4fr;
+  gap: var(--space-5);
 }
 
 .brgy-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  gap: var(--space-4);
 }
-.brgy-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
-.brgy-name { font-weight: 600; }
+.brgy-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+}
+.brgy-name {
+  font-weight: 600;
+}
 .bar {
-  height: 8px;
+  height: var(--space-2);
   background: var(--color-surface-alt);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   border: 1px solid var(--color-border);
 }
 .bar > span {
   display: block;
   height: 100%;
-  border-radius: 999px;
-  transition: width 0.4s;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
 }
 
-/* Chart */
-.chart { position: relative; height: 200px; }
+.chart {
+  position: relative;
+  min-height: 224px;
+}
 .chart__grid {
   position: absolute;
-  inset: 0 0 24px 0;
+  inset: 0 0 var(--space-6) 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -325,32 +362,48 @@ const responders = [
 }
 .chart__svg {
   position: absolute;
-  inset: 0 0 24px 0;
+  inset: 0 0 var(--space-6) 0;
   width: 100%;
-  height: calc(100% - 24px);
+  height: calc(100% - var(--space-6));
 }
 .chart__axis {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   font-size: 11px;
   color: var(--color-text-soft);
 }
+.chart__axis span {
+  text-align: center;
+}
 
 @media (max-width: 1200px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .main-grid { grid-template-columns: 1fr; }
-  .bottom-grid { grid-template-columns: 1fr; }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .main-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
 }
+
 @media (max-width: 720px) {
-  .dashboard h1 { font-size: 22px; }
-  .stats { grid-template-columns: 1fr 1fr; }
-  .recent-reports .card-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .dashboard h1 {
+    font-size: 22px;
+  }
+  .recent-reports .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
 }
+
 @media (max-width: 480px) {
-  .stats { grid-template-columns: 1fr; }
+  .stats {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
