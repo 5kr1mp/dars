@@ -13,7 +13,7 @@ defineProps<{
   <div class="stat" :class="`stat--${tone ?? 'primary'}`">
     <div class="stat__head">
       <span class="stat__label">{{ label }}</span>
-      <span class="stat__icon" v-if="icon">{{ icon }}</span>
+      <span class="stat__icon" v-if="icon" v-html="icon"></span>
     </div>
     <div class="stat__value">{{ value }}</div>
     <div v-if="delta" class="stat__delta" :class="`stat__delta--${trend ?? 'flat'}`">
@@ -71,7 +71,15 @@ defineProps<{
   font-weight: 600;
 }
 .stat__icon {
-  font-size: 18px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-primary-700);
+}
+.stat__icon svg {
+  width: 1.2em;
+  height: 1.2em;
 }
 .stat__value {
   font-size: 30px;

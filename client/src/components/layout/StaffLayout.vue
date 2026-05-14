@@ -102,7 +102,7 @@ const icons: Record<string, string> = {
 
       <div class="sidebar__foot">
         <div class="alert-side">
-          <strong>📞 Emergency Mode</strong>
+          <strong>Emergency Mode</strong>
           <p>Auto-prioritizes Critical reports.</p>
           <label class="switch">
             <input type="checkbox" />
