@@ -21,7 +21,7 @@ async function request<T>(
   method: string,
   path: string,
   { body, params }: { body?: any; params?: Record<string, string> } = {},
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('dars_token')
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
@@ -47,13 +47,7 @@ async function request<T>(
     throw new Error('Unauthorized')
   }
 
-  const json: ApiResponse<T> = await res.json()
-
-  if (json.status === 'error') {
-    throw new Error(json.message)
-  }
-
-  return json.data
+  return await res.json();
 }
 
 /**
