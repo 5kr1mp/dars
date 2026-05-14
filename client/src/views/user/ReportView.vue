@@ -527,23 +527,23 @@ function selectedBarangay(id: number | null) {
 </template>
 
 <style scoped>
-.report-page { padding: 36px 0 60px; }
-.page-head { text-align: center; max-width: 600px; margin: 0 auto 28px; }
-.steps-wrap { margin-bottom: 24px; }
+.report-page { padding: var(--space-8) 0 60px; }
+.page-head { text-align: center; max-width: 600px; margin: 0 auto var(--space-7, 28px); }
+.steps-wrap { margin-bottom: var(--space-6); }
 
 .layout { grid-template-columns: 1fr 320px; align-items: start; }
 
-.form-area { padding: 28px 30px; }
-.col { gap: 20px; }
+.form-area { padding: var(--space-7, 28px) var(--space-7-5, 30px); }
+.col { gap: var(--space-5); }
 .req { color: var(--color-accent-600); }
 
 .alert {
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: var(--space-3-5, 14px) var(--space-4);
   font-size: 14px;
   border: 1px solid;
 }
-.alert p { margin: 4px 0 0; }
+.alert p { margin: var(--space-1) 0 0; }
 .alert--accent {
   background: var(--color-accent-50);
   border-color: var(--color-accent-100);
@@ -562,9 +562,9 @@ function selectedBarangay(id: number | null) {
 
 .toggle-card {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 14px 16px;
+  padding: var(--space-3-5, 14px) var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -572,14 +572,14 @@ function selectedBarangay(id: number | null) {
   transition: border-color 0.15s;
 }
 .toggle-card:hover { border-color: var(--color-primary-300); }
-.toggle-card input { margin-top: 4px; }
-.toggle-card p { margin: 4px 0 0; }
+.toggle-card input { margin-top: var(--space-1); }
+.toggle-card p { margin: var(--space-1) 0 0; }
 
-.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chip {
   display: inline-flex;
   align-items: center;
-  padding: 9px 14px;
+  padding: var(--space-2-25, 9px) var(--space-3-5, 14px);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   font-size: 13px;
@@ -598,13 +598,13 @@ function selectedBarangay(id: number | null) {
 .abuse-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5, 10px);
 }
 .abuse-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px;
+  gap: var(--space-1);
+  padding: var(--space-3-5, 14px);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -617,7 +617,7 @@ function selectedBarangay(id: number | null) {
   background: var(--color-primary-50);
 }
 .abuse-card .law {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 11px;
   font-weight: 600;
   color: var(--color-text-soft);
@@ -628,8 +628,8 @@ function selectedBarangay(id: number | null) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3-5, 14px);
   background: var(--color-primary-50);
   border: 1px dashed var(--color-primary-300);
   border-radius: var(--radius-md);
@@ -640,25 +640,25 @@ function selectedBarangay(id: number | null) {
 
 .two-col { grid-template-columns: 1fr 1fr; }
 
-.review { display: flex; flex-direction: column; gap: 18px; }
-.review h3 { margin-bottom: 4px; }
+.review { display: flex; flex-direction: column; gap: var(--space-4-5, 18px); }
+.review h3 { margin-bottom: var(--space-1); }
 .review h4 {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--color-text-soft);
-  margin: 8px 0 6px;
+  margin: var(--space-2) 0 var(--space-1-5, 6px);
 }
 .review section {
-  padding: 14px 0;
+  padding: var(--space-3-5, 14px) 0;
   border-top: 1px solid var(--color-border);
 }
 .review section:first-of-type { border-top: none; padding-top: 0; }
 .review dl {
   display: grid;
   grid-template-columns: 140px 1fr;
-  row-gap: 10px;
-  column-gap: 16px;
+  row-gap: var(--space-2-5, 10px);
+  column-gap: var(--space-4);
   margin: 0;
   font-size: 14px;
 }
@@ -668,16 +668,16 @@ function selectedBarangay(id: number | null) {
 .form-nav {
   display: flex;
   justify-content: space-between;
-  margin-top: 24px;
-  padding-top: 18px;
+  margin-top: var(--space-6);
+  padding-top: var(--space-4-5, 18px);
   border-top: 1px solid var(--color-border);
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Sidebar */
-.side { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 96px; }
+.side { display: flex; flex-direction: column; gap: var(--space-3-5, 14px); position: sticky; top: 96px; }
 .tips ul {
-  padding-left: 18px;
+  padding-left: var(--space-4-5, 18px);
   margin: 0;
   line-height: 1.8;
   color: var(--color-text-muted);
@@ -687,12 +687,12 @@ function selectedBarangay(id: number | null) {
 .warn-card strong { color: var(--color-accent-700); }
 
 /* Confirmation */
-.confirm { padding: 60px 0; display: flex; justify-content: center; }
-.confirm-card { max-width: 580px; text-align: center; padding: 44px 36px; }
+.confirm { padding: var(--space-12) 0; display: flex; justify-content: center; }
+.confirm-card { max-width: 580px; text-align: center; padding: var(--space-11, 44px) var(--space-9, 36px); }
 .confirm__icon {
   width: 78px;
   height: 78px;
-  margin: 0 auto 18px;
+  margin: 0 auto var(--space-4-5, 18px);
   background: var(--color-success-bg);
   color: var(--color-success);
   border-radius: 50%;
@@ -701,8 +701,8 @@ function selectedBarangay(id: number | null) {
   justify-content: center;
 }
 .code-block {
-  margin: 16px 0 6px;
-  padding: 14px 16px;
+  margin: var(--space-4) 0 var(--space-1-5, 6px);
+  padding: var(--space-3-5, 14px) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--color-primary-50);
   border: 1px dashed var(--color-primary-300);
