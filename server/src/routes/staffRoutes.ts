@@ -21,3 +21,5 @@ router.route('/:id')
     .delete(authenticate, authorizeRole("admin", "system_admin"), deleteStaff);
 
 router.post('/change-password', authenticate, changePassword);
+
+export default router;
