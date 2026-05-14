@@ -12,6 +12,7 @@ import responderRoute from './routes/responderRoutes.js'
 import victimRoute from './routes/victimRoutes.js';
 import reportRoute from './routes/reportRoutes.js'
 import staffRoute from './routes/staffRoutes.js'
+import auditLogRoute from './routes/auditLogRoutes.js'
 import { initReportSockets } from './sockets/reportSockets.js';
 import { sendSuccess } from './utils/response.js';
  
@@ -37,6 +38,7 @@ app.use('/api/responder',responderRoute);
 app.use('/api/victim',victimRoute);
 app.use('/api/reports',reportRoute);
 app.use('/api/staff',staffRoute)
+app.use('/api/audit-log',auditLogRoute)
 
 initReportSockets(io);
 

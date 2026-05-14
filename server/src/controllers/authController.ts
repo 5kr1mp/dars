@@ -13,6 +13,7 @@ interface PasswordLookupResult extends RowDataPacket {
     user_role : string;
     first_name : string;
     last_name : string;
+    barangay_id : number | null;
 }
 
 export async function login(req : Request, res : Response) {
@@ -54,7 +55,8 @@ export async function login(req : Request, res : Response) {
 
     const payload : JwtUserPayload = {
         staff_id : user.id,
-        user_role : user.user_role as UserRole
+        user_role : user.user_role as UserRole,
+        barangay_id : user.barangay_id
     }
 
     const token = jwt.sign(payload,JWT_SECRET,{

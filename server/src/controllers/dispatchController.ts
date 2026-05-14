@@ -2,9 +2,11 @@ import type { Request, Response } from "express";
 import type { RowDataPacket } from "mysql2";
 import { getConn } from "../config/db.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import type { Dispatch, DispatchStatus } from "../config/types.js";
+import type { AuthRequest, Dispatch, DispatchStatus } from "../config/types.js";
 
 interface DispatchRow extends RowDataPacket, Dispatch {}
+
+const OPERATOR_SCOPE = ' AND report_id IN (SELECT id FROM report WHERE barangay_id = ?)';
 
 const VALID_DISPATCH_STATUSES: DispatchStatus[] = [
     "Assigned",
@@ -55,15 +57,18 @@ export async function createDispatch(req: Request, res: Response) {
     }
 }
 
-export async function getDispatches(req: Request, res: Response) {
+export async function getDispatches(req: AuthRequest, res: Response) {
     const conn = await getConn();
     try {
-        const [result] = await conn.execute<DispatchRow[][]>(
-            "CALL sp_dispatch_get(?)",
-            [null]
-        );
+        let query = "SELECT * FROM vw_dispatch WHERE 1=1";
+        const params: any[] = [];
+        if (req.user?.user_role === "operator") {
+            query += OPERATOR_SCOPE;
+            params.push(req.user.barangay_id ?? -1);
+        }
+        query += " ORDER BY dispatch_time DESC";
 
-        const rows = result[0];
+        const [rows] = await conn.execute<DispatchRow[]>(query, params);
         sendSuccess(res, 200, "Dispatches retrieved successfully", rows);
     } catch (err: any) {
         sendError(res, 500, err.message);
@@ -72,7 +77,7 @@ export async function getDispatches(req: Request, res: Response) {
     }
 }
 
-export async function getDispatchById(req: Request, res: Response) {
+export async function getDispatchById(req: AuthRequest, res: Response) {
     const { id } = req.params;
 
     if (!id || isNaN(Number(id))) {
@@ -82,12 +87,14 @@ export async function getDispatchById(req: Request, res: Response) {
 
     const conn = await getConn();
     try {
-        const [result] = await conn.execute<DispatchRow[][]>(
-            "CALL sp_dispatch_get(?)",
-            [Number(id)]
-        );
+        let query = "SELECT * FROM vw_dispatch WHERE dispatch_id = ?";
+        const params: any[] = [Number(id)];
+        if (req.user?.user_role === "operator") {
+            query += OPERATOR_SCOPE;
+            params.push(req.user.barangay_id ?? -1);
+        }
 
-        const rows = result[0];
+        const [rows] = await conn.execute<DispatchRow[]>(query, params);
         if (!rows || rows.length === 0) {
             sendError(res, 404, "Dispatch not found");
             return;
@@ -101,7 +108,7 @@ export async function getDispatchById(req: Request, res: Response) {
     }
 }
 
-export async function getDispatchesByReport(req: Request, res: Response) {
+export async function getDispatchesByReport(req: AuthRequest, res: Response) {
     const { report_id } = req.params;
 
     if (!report_id) {
@@ -111,12 +118,15 @@ export async function getDispatchesByReport(req: Request, res: Response) {
 
     const conn = await getConn();
     try {
-        const [result] = await conn.execute<DispatchRow[][]>(
-            "CALL sp_dispatch_get_by_report(?)",
-            [report_id]
-        );
+        let query = "SELECT * FROM vw_dispatch WHERE report_id = ?";
+        const params: any[] = [report_id];
+        if (req.user?.user_role === "operator") {
+            query += OPERATOR_SCOPE;
+            params.push(req.user.barangay_id ?? -1);
+        }
+        query += " ORDER BY dispatch_time DESC";
 
-        const rows = result[0];
+        const [rows] = await conn.execute<DispatchRow[]>(query, params);
         sendSuccess(res, 200, "Dispatches retrieved successfully", rows);
     } catch (err: any) {
         sendError(res, 500, err.message);

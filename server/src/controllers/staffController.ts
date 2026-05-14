@@ -137,6 +137,7 @@ export const createStaff = async(req : Request, res : Response) => {
         );
 
         const newStaff = {
+            staff_id: result[0]?.[0]?.id,
             email,
             firstName,
             lastName,

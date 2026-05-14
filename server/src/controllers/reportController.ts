@@ -44,13 +44,19 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
     let query = 'SELECT * FROM vw_report WHERE 1=1';
     const params: any[] = [];
 
+    // Operators only see reports in their own barangay
+    if (req.user?.user_role === 'operator') {
+        query += ' AND report_id IN (SELECT id FROM report WHERE barangay_id = ?)';
+        params.push(req.user.barangay_id ?? -1);
+    }
+
     if (status) {
         query += ' AND report_status = ?';
         params.push(status);
     }
 
     if (barangay_id) {
-        query += ' AND barangay_name = (SELECT barangay_name FROM barangay WHERE id = ?)';
+        query += ' AND report_id IN (SELECT id FROM report WHERE barangay_id = ?)';
         params.push(Number(barangay_id));
     }
 
@@ -75,6 +81,19 @@ export const getReportById = async (req: AuthRequest, res: Response) => {
     }
 
     const conn = await getConn();
+
+    if (req.user?.user_role === 'operator') {
+        const [own] = await conn.execute<RowDataPacket[]>(
+            'SELECT 1 FROM report WHERE id = ? AND barangay_id = ?',
+            [id, req.user.barangay_id ?? -1]
+        );
+        if (own.length === 0) {
+            await conn.end();
+            sendError(res, 404, 'Report not found');
+            return;
+        }
+    }
+
     const [result]: any = await conn.execute('CALL sp_report_get(?)', [id]);
     await conn.end();
 
@@ -266,6 +285,19 @@ export const getReportStatusHistory = async (req: AuthRequest, res: Response) =>
     }
 
     const conn = await getConn();
+
+    if (req.user?.user_role === 'operator') {
+        const [own] = await conn.execute<RowDataPacket[]>(
+            'SELECT 1 FROM report WHERE id = ? AND barangay_id = ?',
+            [id, req.user.barangay_id ?? -1]
+        );
+        if (own.length === 0) {
+            await conn.end();
+            sendError(res, 404, 'Report not found');
+            return;
+        }
+    }
+
     const [result]: any = await conn.execute('CALL sp_report_status_history_get(?)', [id]);
     await conn.end();
 
