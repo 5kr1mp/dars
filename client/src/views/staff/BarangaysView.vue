@@ -61,7 +61,7 @@ const zones = computed<CoverageZone[]>(() =>
             <tr v-for="b in barangays" :key="b.id">
               <td>
                 <div class="brgy-cell">
-                  <span class="brgy-icon">📍</span>
+                  <span class="brgy-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path></svg></span>
                   <div>
                     <strong>{{ b.name }}</strong>
                     <div class="muted small">{{ b.lat.toFixed(4) }}, {{ b.lng.toFixed(4) }}</div>
@@ -106,17 +106,17 @@ const zones = computed<CoverageZone[]>(() =>
 </template>
 
 <style scoped>
-.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
 .layout { grid-template-columns: 1.6fr 1fr; align-items: start; }
 
-.brgy-cell { display: flex; align-items: center; gap: 12px; }
+.brgy-cell { display: flex; align-items: center; gap: var(--space-3); }
 .brgy-icon {
   width: 36px; height: 36px;
   background: var(--color-primary-50);
   border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 18px;
+  color: var(--color-primary-600);
 }
 .open-pill {
   display: inline-block;

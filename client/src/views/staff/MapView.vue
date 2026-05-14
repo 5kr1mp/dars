@@ -32,10 +32,10 @@ const markers = computed<IncidentMarker[]>(() =>
         <h1>Live map</h1>
         <p class="muted">Real-time view of incidents across all barangays.</p>
       </div>
-      <div class="row" style="gap: 8px">
-        <button class="ctrl">🔍 Search</button>
-        <button class="ctrl">📍 Center</button>
-        <button class="ctrl active">🚨 Active only</button>
+      <div class="row" style="gap: var(--space-2)">
+        <button class="ctrl"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; display: inline;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>Search</button>
+        <button class="ctrl"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; display: inline;"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24,7.76 14,12 16.24,16.24 12,14 7.76,16.24 10,12 7.76,7.76 12,10"></polygon></svg>Center</button>
+        <button class="ctrl active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; display: inline;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>Active only</button>
       </div>
     </div>
 
@@ -65,12 +65,12 @@ const markers = computed<IncidentMarker[]>(() =>
 </template>
 
 <style scoped>
-.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
 .ctrl {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 13px;
@@ -80,14 +80,14 @@ const markers = computed<IncidentMarker[]>(() =>
 
 .layout { grid-template-columns: 1fr 320px; align-items: start; }
 
-.map-card { padding: 12px; overflow: hidden; }
+.map-card { padding: var(--space-3); overflow: hidden; }
 .map-card :deep(.map-wrap) { border-radius: var(--radius-md); }
 
-.incidents { padding: 0; position: sticky; top: 84px; max-height: calc(100vh - 96px); overflow-y: auto; }
-.card-head { padding: 14px 18px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; }
-.incident-list { list-style: none; padding: 8px; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.incidents { padding: 0; position: sticky; top: var(--topbar-h); max-height: calc(100vh - 96px); overflow-y: auto; }
+.card-head { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; }
+.incident-list { list-style: none; padding: var(--space-2); margin: 0; display: flex; flex-direction: column; gap: var(--space-1-5, 6px); }
 .incident-list li {
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface-alt);
@@ -102,8 +102,8 @@ const markers = computed<IncidentMarker[]>(() =>
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   background: #fff;
   border: 1px solid var(--color-border);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: 11px;
 }
 

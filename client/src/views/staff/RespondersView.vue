@@ -80,21 +80,21 @@ const agencies = [
 </template>
 
 <style scoped>
-.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
 
 .summary {
   grid-template-columns: repeat(5, 1fr);
-  margin-bottom: 18px;
+  margin-bottom: var(--space-4);
 }
 .agency-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: var(--space-3) var(--space-4);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .agency-dot {
   width: 10px; height: 10px;
@@ -104,7 +104,7 @@ const agencies = [
 .resp-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2-5, 10px);
 }
 .avatar {
   width: 32px; height: 32px;
@@ -118,7 +118,7 @@ const agencies = [
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5, 9px);
   border-radius: var(--radius-full);
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);

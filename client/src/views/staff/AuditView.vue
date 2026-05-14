@@ -25,9 +25,9 @@ const actionTone = (a: string) => ({ INSERT: 'success', UPDATE: 'info', DELETE: 
         <h1>Audit log</h1>
         <p class="muted">Every change to the system, captured for compliance and accountability.</p>
       </div>
-      <div class="row" style="gap: 8px">
-        <button class="filter-btn">📥 Export</button>
-        <button class="filter-btn">🔄 Refresh</button>
+      <div class="row" style="gap: var(--space-2)">
+        <button class="filter-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; display: inline;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7,10 12,15 17,10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Export</button>
+        <button class="filter-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; display: inline;"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>Refresh</button>
       </div>
     </div>
 
@@ -89,12 +89,12 @@ const actionTone = (a: string) => ({ INSERT: 'success', UPDATE: 'info', DELETE: 
 </template>
 
 <style scoped>
-.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.page-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
 .filter-btn {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 13px;
@@ -103,15 +103,15 @@ const actionTone = (a: string) => ({ INSERT: 'success', UPDATE: 'info', DELETE: 
 
 .filters {
   display: flex;
-  gap: 10px;
-  padding: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 .select-mini, .search-mini {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: 13px;
 }
 .search-mini { flex: 1; outline: none; }
@@ -134,8 +134,8 @@ const actionTone = (a: string) => ({ INSERT: 'success', UPDATE: 'info', DELETE: 
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: 12px;
 }
 .json {
