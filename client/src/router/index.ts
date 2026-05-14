@@ -20,6 +20,9 @@ import AuditView from '../views/staff/AuditView.vue'
 import StaffMgmtView from '../views/staff/StaffMgmtView.vue'
 import SettingsView from '../views/staff/SettingsView.vue'
 
+// localStorage na key
+const TOKEN_KEY = 'dars_token'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -59,6 +62,15 @@ const router = createRouter({
   scrollBehavior() {
     return { top: 0 }
   },
+})
+
+// prevents access to /staff routes if dili authenticated
+router.beforeEach((to) => {
+  const isLoggedIn = !!localStorage.getItem(TOKEN_KEY)
+  const isStaffRoute = to.path.startsWith('/staff') && to.name !== 'staff-login'
+
+  if (isStaffRoute && !isLoggedIn) return { name: 'staff-login' }
+  if (to.name === 'staff-login' && isLoggedIn) return { name: 'staff-dashboard' }
 })
 
 export default router

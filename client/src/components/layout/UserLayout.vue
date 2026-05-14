@@ -2,6 +2,7 @@
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { ref, watch } from 'vue'
 import QuickExit from '../common/QuickExit.vue'
+import AppLogo from '../common/AppLogo.vue'
 
 const route = useRoute()
 const menuOpen = ref(false)
@@ -13,16 +14,10 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
     <header class="user-header">
       <div class="container header-inner">
         <RouterLink to="/" class="brand">
-          <span class="brand__mark">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4.5 8-11.5V5l-8-3-8 3v5.5C4 17.5 12 22 12 22z" />
-              <path d="M9 12l2 2 4-4" />
-            </svg>
-          </span>
+          <AppLogo :size="36" variant="gradient" />
           <span class="brand__text">
-            <strong>SafeReport</strong>
-            <span class="brand__sub">Domestic Abuse Response System</span>
+            <strong>Domestic Abuse</strong>
+            <strong>Response System</strong>
           </span>
         </RouterLink>
 
@@ -69,11 +64,7 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
           <div>
             <div class="brand">
               <span class="brand__mark">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22s8-4.5 8-11.5V5l-8-3-8 3v5.5C4 17.5 12 22 12 22z" />
-                  <path d="M9 12l2 2 4-4" />
-                </svg>
+                <AppLogo :size="30" variant="white" />
               </span>
               <strong>SafeReport</strong>
             </div>
@@ -146,7 +137,7 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
   flex-shrink: 0;
 }
 .brand:hover { text-decoration: none; }
-.brand__mark {
+/* .brand__mark {
   width: 38px;
   height: 38px;
   border-radius: var(--radius-md);
@@ -156,7 +147,7 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
+} */
 .brand__text {
   display: flex;
   flex-direction: column;

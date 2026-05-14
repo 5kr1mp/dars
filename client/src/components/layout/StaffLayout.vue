@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import { ref, watch } from 'vue'
+import AppLogo from '../common/AppLogo.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -61,10 +62,7 @@ const icons: Record<string, string> = {
     <aside class="sidebar" :class="{ open: drawerOpen }">
       <RouterLink to="/staff/dashboard" class="sidebar__brand">
         <span class="brand__mark">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4.5 8-11.5V5l-8-3-8 3v5.5C4 17.5 12 22 12 22z" />
-          </svg>
+          <AppLogo :size="20" variant="white" />
         </span>
         <div>
           <strong>SafeReport</strong>
