@@ -4,8 +4,8 @@
 
 | Item | Value |
 |---|---|
-| Base URL | `http://localhost:3000` |
-| WebSocket URL | `ws://localhost:3000` |
+| Base URL | `http://localhost:8000` |
+| WebSocket URL | `ws://localhost:8000` |
 | Data format | JSON |
 | Auth scheme | Bearer JWT (1-day expiry) |
 
@@ -624,14 +624,14 @@ Delete a dispatch record.
 
 ## WebSocket
 
-The server uses **Socket.IO v4**. Connect to `ws://localhost:3000`.
+The server uses **Socket.IO v4**. Connect to `ws://localhost:8000`.
 
 ### Connection
 
 ```js
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3000");
+const socket = io("http://localhost:8000");
 ```
 
 ### Client-emitted events

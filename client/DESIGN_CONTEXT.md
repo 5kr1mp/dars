@@ -24,8 +24,8 @@ This document defines the visual design system for the Domestic Abuse Reporting 
 
 ## Typography Scale
 - **Font families**:
-  - Body: Inter (--font-sans)
-  - Headings: Plus Jakarta Sans (--font-display)
+  - Body: IBM Plex Sans (--font-sans)
+  - Headings: Sora (--font-display)
 
 - **Heading sizes**:
   - h1: 28-30px, 700 weight, -0.01em letter spacing
@@ -38,10 +38,10 @@ This document defines the visual design system for the Domestic Abuse Reporting 
 
 ## Border Radius Rules
 - Use only design token radii:
-  - Small elements: `var(--radius-sm)` (6px) — badges, inputs
-  - Medium elements: `var(--radius-md)` (10px) — buttons, small cards
-  - Large elements: `var(--radius-lg)` (16px) — main cards
-  - Extra large: `var(--radius-xl)` (22px) — rarely used
+  - Small elements: `var(--radius-sm)` (3px) — badges, inputs
+  - Medium elements: `var(--radius-md)` (5px) — buttons, small cards
+  - Large elements: `var(--radius-lg)` (8px) — main cards
+  - Extra large: `var(--radius-xl)` (11px) — rarely used
   - Circular: `var(--radius-full)` (999px) — pills, avatars
 
 - **Avoid**: Hard-coded pixel values, "pill-shaped everything" styling
