@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import AppButton from '../../components/common/AppButton.vue'
+import {api} from '../../services/api.js';
 
 interface Responder {
   responder_id: number
@@ -21,17 +22,13 @@ async function fetchResponders() {
   error.value = ''
 
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/responders'
-    )
+    const result = await api.get<Responder[]>('/responder'); 
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch responders')
+    if (result.status === 'error'){
+      throw new Error(result.message);
     }
 
-    responders.value = data.data
+    responders.value = result.data;
   } catch (err: any) {
     error.value = err.message || 'Something went wrong'
   } finally {
@@ -80,16 +77,6 @@ function getStatus(r: Responder) {
           Agencies and individuals who respond to incidents.
         </p>
       </div>
-
-      <div class="row" style="gap: 8px">
-        <AppButton variant="secondary">
-          Import
-        </AppButton>
-
-        <AppButton variant="primary">
-          + Add Responder
-        </AppButton>
-      </div>
     </div>
 
     <div
@@ -107,6 +94,7 @@ function getStatus(r: Responder) {
     </div>
 
     <template v-else>
+      <!-- Agency cards -->
       <div class="grid summary">
         <div
           v-for="a in agencies"
@@ -135,7 +123,6 @@ function getStatus(r: Responder) {
               <th>Total Dispatches</th>
               <th>Completed</th>
               <th>Contact</th>
-              <th></th>
             </tr>
           </thead>
 
@@ -146,6 +133,7 @@ function getStatus(r: Responder) {
             >
               <td>
                 <div class="resp-cell">
+                  <!-- Name to Initials -->
                   <span class="avatar">
                     {{
                       r.responder_name
@@ -155,40 +143,14 @@ function getStatus(r: Responder) {
                         .slice(0, 2)
                     }}
                   </span>
-
-                  <strong>
-                    {{ r.responder_name }}
-                  </strong>
+                  <strong>{{ r.responder_name }}</strong>
                 </div>
               </td>
-
-              <td>
-                <span class="agency-tag">
-                  {{ r.agency || 'N/A' }}
-                </span>
-              </td>
-
-              <td>
-                <StatusBadge :status="getStatus(r)" />
-              </td>
-
-              <td>
-                {{ r.total_dispatches }}
-              </td>
-
-              <td>
-                {{ r.completed_dispatches }}
-              </td>
-
-              <td class="muted">
-                {{ r.contact_number || 'N/A' }}
-              </td>
-
-              <td>
-                <button class="row-link">
-                  Manage →
-                </button>
-              </td>
+              <td><span class="agency-tag">{{ r.agency || 'N/A' }}</span></td>
+              <td><StatusBadge :status="getStatus(r)" /></td>
+              <td>{{ r.total_dispatches }}</td>
+              <td>{{ r.completed_dispatches }}</td>
+              <td class="muted">{{ r.contact_number || 'N/A' }}</td>
             </tr>
           </tbody>
         </table>
