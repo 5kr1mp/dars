@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import StepIndicator from '../../components/common/StepIndicator.vue'
 import LocationPicker from '../../components/common/LocationPicker.vue'
+import { api } from '../../services/api'
 
 /**
  * Form fields here mirror the database schema (see docs/db.md):
@@ -13,38 +14,29 @@ import LocationPicker from '../../components/common/LocationPicker.vue'
  */
 
 interface Barangay {
-  id: number
+  barangay_id?: number
+  id?: number
   barangay_name: string
-  latitude: number
-  longitude: number
+  latitude: number | null
+  longitude: number | null
 }
+
 interface AbuseType {
   abuse_name: string
+  abuse_description?: string
   severity: number
   law_reference: string
-  desc: string
 }
 
-const barangays: Barangay[] = [
-  { id: 1, barangay_name: 'Brgy. San Isidro', latitude: 14.6042, longitude: 121.0432 },
-  { id: 2, barangay_name: 'Brgy. Maligaya', latitude: 14.5898, longitude: 121.0511 },
-  { id: 3, barangay_name: 'Brgy. Bagong Silang', latitude: 14.6121, longitude: 121.0354 },
-  { id: 4, barangay_name: 'Brgy. Sta. Maria', latitude: 14.5972, longitude: 121.0598 },
-  { id: 5, barangay_name: 'Brgy. Mabini', latitude: 14.5803, longitude: 121.0411 },
-]
-
-const abuseTypes: AbuseType[] = [
-  { abuse_name: 'Physical', severity: 8, law_reference: 'RA 9262 §5(a)', desc: 'Hitting, slapping, choking, weapon use' },
-  { abuse_name: 'Sexual', severity: 10, law_reference: 'RA 9262 §5(b)', desc: 'Non-consensual contact or coercion' },
-  { abuse_name: 'Psychological', severity: 7, law_reference: 'RA 9262 §5(i)', desc: 'Threats, intimidation, isolation' },
-  { abuse_name: 'Emotional', severity: 5, law_reference: 'RA 9262 §5(i)', desc: 'Manipulation, humiliation' },
-  { abuse_name: 'Verbal', severity: 3, law_reference: 'RA 9262 §5(i)', desc: 'Insults, yelling' },
-  { abuse_name: 'Economic', severity: 5, law_reference: 'RA 9262 §5(e)', desc: 'Withholding money, property control' },
-  { abuse_name: 'Child Abuse', severity: 9, law_reference: 'RA 7610', desc: 'Harm or neglect of a minor' },
-]
+const barangays = ref<Barangay[]>([])
+const abuseTypes = ref<AbuseType[]>([])
+const loadingData = ref(false)
+const dataError = ref('')
 
 const step = ref(0)
 const submitted = ref(false)
+const submitting = ref(false)
+const submitError = ref('')
 const reportCode = ref('')
 
 const steps = [
@@ -71,11 +63,15 @@ const form = ref({
   incident_time: '',
   description: '',
 
+  // report.barangay_id — barangay where the incident occurred (separate from victim's residence)
+  incident_barangay_id: null as number | null,
+
   // report.latitude, report.longitude
   location: null as { lat: number; lng: number } | null,
 
   // victim.*
   victim_first_name: '',
+  victim_middle_name: '',
   victim_last_name: '',
   victim_contact_number: '',
   victim_email: '',
@@ -84,6 +80,8 @@ const form = ref({
 
   // offender.*
   offender_first_name: '',
+  offender_middle_name: '',
+  offender_last_name: '',
   offender_sex: '' as '' | 'male' | 'female' | 'other',
   offender_barangay_id: null as number | null,
   offender_relationship: '', // metadata, lives in description on submit
@@ -92,8 +90,24 @@ const form = ref({
 })
 
 const selectedAbuse = computed(() =>
-  abuseTypes.find((t) => t.abuse_name === form.value.abuse_name) ?? null,
+  abuseTypes.value.find((t) => t.abuse_name === form.value.abuse_name) ?? null,
 )
+
+// City center of Tagum (Magugpo Poblacion) — used when no barangay is selected yet.
+const TAGUM_CENTER: [number, number] = [7.4475, 125.8073]
+
+const incidentBarangay = computed(() =>
+  barangays.value.find((b) => bId(b) === form.value.incident_barangay_id) ?? null,
+)
+
+// Re-centers the map on the chosen barangay so the user can drop a precise pin within it.
+const mapCenter = computed<[number, number]>(() => {
+  const b = incidentBarangay.value
+  if (b && b.latitude != null && b.longitude != null) {
+    return [Number(b.latitude), Number(b.longitude)]
+  }
+  return TAGUM_CENTER
+})
 
 const severityLabel = computed(() => {
   const s = selectedAbuse.value?.severity ?? 0
@@ -109,14 +123,139 @@ function next() {
 function back() {
   if (step.value > 0) step.value--
 }
-function submit() {
-  // Generates UUID-style code (mock); real flow uses sp_report_create which returns new_report_id
-  reportCode.value = 'SR-' + Math.random().toString(36).slice(2, 8).toUpperCase()
-  submitted.value = true
+
+function bId(b: Barangay): number {
+  return (b.barangay_id ?? b.id ?? 0) as number
 }
 
 function selectedBarangay(id: number | null) {
-  return barangays.find((b) => b.id === id)?.barangay_name ?? '—'
+  return barangays.value.find((b) => bId(b) === id)?.barangay_name ?? '—'
+}
+
+async function loadFormData() {
+  loadingData.value = true
+  dataError.value = ''
+  try {
+    const [bRows, aRows] = await Promise.all([
+      api.get<Barangay[]>('/barangay'),
+      api.get<AbuseType[]>('/abuse-type'),
+    ])
+    barangays.value = bRows ?? []
+    abuseTypes.value = aRows ?? []
+  } catch (err: any) {
+    dataError.value = err.message || 'Could not reach the server. Please try again.'
+  } finally {
+    loadingData.value = false
+  }
+}
+
+onMounted(loadFormData)
+
+const SEX_MAP: Record<'male' | 'female' | 'other', 'Male' | 'Female' | 'Other'> = {
+  male: 'Male',
+  female: 'Female',
+  other: 'Other',
+}
+
+async function submit() {
+  if (submitting.value) return
+  submitError.value = ''
+
+  // Client-side guardrails the server also enforces
+  if (!form.value.abuse_name) {
+    submitError.value = 'Please choose an abuse type.'
+    return
+  }
+  if (form.value.incident_barangay_id == null) {
+    submitError.value = 'Please select the barangay where the incident happened.'
+    return
+  }
+  if (form.value.victim_barangay_id == null) {
+    submitError.value = 'Please select your barangay.'
+    return
+  }
+  if (!form.value.location) {
+    submitError.value = 'Please drop a pin on the incident location.'
+    return
+  }
+  if (!form.value.victim_contact_number && !form.value.victim_email) {
+    submitError.value =
+      'Please provide at least a phone number or email so responders can reach you.'
+    return
+  }
+
+  submitting.value = true
+  try {
+    // 1) Create victim. Anonymous reports still need a row; use placeholders.
+    const victimPayload = {
+      first_name:
+        form.value.victim_first_name.trim() ||
+        (form.value.anonymous ? 'Anonymous' : ''),
+      middle_name: form.value.victim_middle_name.trim() || null,
+      last_name:
+        form.value.victim_last_name.trim() ||
+        (form.value.anonymous ? 'Reporter' : ''),
+      contact_number: form.value.victim_contact_number.trim() || null,
+      email: form.value.victim_email.trim() || null,
+      barangay_id: form.value.victim_barangay_id,
+      address: form.value.victim_address.trim() || null,
+    }
+    const victim = await api.post<{ id: number }>('/victim', victimPayload)
+
+    // 2) Optional offender. Only created when the reporter shared something.
+    let offender_id: number | null = null
+    const hasOffenderData =
+      form.value.offender_first_name.trim() ||
+      form.value.offender_last_name.trim() ||
+      form.value.offender_sex ||
+      form.value.offender_barangay_id != null
+    if (hasOffenderData) {
+      const offenderPayload = {
+        first_name: form.value.offender_first_name.trim() || 'Unknown',
+        middle_name: form.value.offender_middle_name.trim() || null,
+        // schema requires last_name NOT NULL — fall back to placeholder if blank
+        last_name: form.value.offender_last_name.trim() || 'Unknown',
+        sex: form.value.offender_sex ? SEX_MAP[form.value.offender_sex] : null,
+        barangay_id: form.value.offender_barangay_id,
+      }
+      const offender = await api.post<{ id: number }>('/offender', offenderPayload)
+      offender_id = offender.id
+    }
+
+    // 3) Bundle non-schema metadata into the description.
+    const metaLines: string[] = []
+    if (form.value.description.trim()) metaLines.push(form.value.description.trim())
+    if (form.value.incident_date || form.value.incident_time) {
+      metaLines.push(
+        `Incident time: ${form.value.incident_date || 'unspecified'} ${form.value.incident_time || ''}`.trim(),
+      )
+    }
+    if (form.value.offender_relationship) {
+      metaLines.push(`Relationship to victim: ${form.value.offender_relationship}`)
+    }
+    metaLines.push(`Reporter: ${form.value.reporterRole}; Urgency: ${form.value.urgency}`)
+    if (form.value.anonymous) metaLines.push('Reporter requested anonymity.')
+
+    // 4) Create report.
+    const reportPayload = {
+      victim_id: victim.id,
+      offender_id: offender_id ?? undefined,
+      abuse_name: form.value.abuse_name,
+      barangay_id: form.value.incident_barangay_id,
+      latitude: form.value.location.lat,
+      longitude: form.value.location.lng,
+      report_description: metaLines.join('\n\n'),
+    }
+    const report = await api.post<{ report_id: string }>('/reports', reportPayload)
+
+    reportCode.value = report.report_id
+    submitted.value = true
+  } catch (err: any) {
+    submitError.value =
+      err.message || 'Something went wrong while submitting your report. Please try again.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -133,6 +272,15 @@ function selectedBarangay(id: number | null) {
 
       <div class="steps-wrap">
         <StepIndicator :steps="steps" :current="step" />
+      </div>
+
+      <div v-if="loadingData" class="muted" style="text-align:center; padding: var(--space-3)">
+        Loading form…
+      </div>
+      <div v-else-if="dataError" class="alert alert--accent" style="margin-bottom: var(--space-4)">
+        <strong>Couldn't load form data.</strong>
+        <p>{{ dataError }}</p>
+        <button class="retry-btn" @click="loadFormData">Retry</button>
       </div>
 
       <div class="grid layout">
@@ -209,7 +357,7 @@ function selectedBarangay(id: number | null) {
                 >
                   <input type="radio" :value="t.abuse_name" v-model="form.abuse_name" />
                   <strong>{{ t.abuse_name }}</strong>
-                  <span class="muted small">{{ t.desc }}</span>
+                  <span class="muted small">{{ t.abuse_description }}</span>
                   <span class="law">{{ t.law_reference }}</span>
                 </label>
               </div>
@@ -235,8 +383,23 @@ function selectedBarangay(id: number | null) {
             </div>
 
             <div class="field">
+              <label>Barangay where it happened <span class="req">*</span></label>
+              <select v-model.number="form.incident_barangay_id">
+                <option :value="null">Select the incident barangay</option>
+                <option v-for="b in barangays" :key="bId(b)" :value="bId(b)">
+                  {{ b.barangay_name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
               <label>Incident location <span class="hint">(tap map to drop a pin)</span></label>
-              <LocationPicker v-model="form.location" :height="'280px'" />
+              <LocationPicker
+                v-model="form.location"
+                :center="mapCenter"
+                :zoom="incidentBarangay ? 16 : 13"
+                :height="'280px'"
+              />
             </div>
 
             <div class="field">
@@ -266,6 +429,10 @@ function selectedBarangay(id: number | null) {
                 <input v-model="form.victim_last_name" maxlength="15" />
               </div>
             </div>
+            <div class="field">
+              <label>Middle name <span class="hint">(optional)</span></label>
+              <input v-model="form.victim_middle_name" maxlength="15" />
+            </div>
             <div class="grid two-col">
               <div class="field">
                 <label>Phone number</label>
@@ -290,7 +457,7 @@ function selectedBarangay(id: number | null) {
               <label>Barangay (residence) <span class="req">*</span></label>
               <select v-model.number="form.victim_barangay_id">
                 <option :value="null">Select your barangay</option>
-                <option v-for="b in barangays" :key="b.id" :value="b.id">
+                <option v-for="b in barangays" :key="bId(b)" :value="bId(b)">
                   {{ b.barangay_name }}
                 </option>
               </select>
@@ -324,6 +491,16 @@ function selectedBarangay(id: number | null) {
                 <input v-model="form.offender_first_name" maxlength="20" />
               </div>
               <div class="field">
+                <label>Last name <span class="hint">(if known)</span></label>
+                <input v-model="form.offender_last_name" maxlength="15" />
+              </div>
+            </div>
+            <div class="grid two-col">
+              <div class="field">
+                <label>Middle name <span class="hint">(optional)</span></label>
+                <input v-model="form.offender_middle_name" maxlength="15" />
+              </div>
+              <div class="field">
                 <label>Sex</label>
                 <div class="chip-row">
                   <label class="chip">
@@ -346,7 +523,7 @@ function selectedBarangay(id: number | null) {
               <label>Barangay (residence)</label>
               <select v-model.number="form.offender_barangay_id">
                 <option :value="null">Unknown / Not applicable</option>
-                <option v-for="b in barangays" :key="b.id" :value="b.id">
+                <option v-for="b in barangays" :key="bId(b)" :value="bId(b)">
                   {{ b.barangay_name }}
                 </option>
               </select>
@@ -390,6 +567,7 @@ function selectedBarangay(id: number | null) {
                   <dt>Type</dt><dd>{{ form.abuse_name || '—' }}</dd>
                   <dt>Severity</dt><dd>{{ severityLabel }} ({{ selectedAbuse?.severity ?? '—' }}/10)</dd>
                   <dt>When</dt><dd>{{ form.incident_date || '—' }} {{ form.incident_time }}</dd>
+                  <dt>Barangay</dt><dd>{{ selectedBarangay(form.incident_barangay_id) }}</dd>
                   <dt>Location</dt>
                   <dd>
                     <span v-if="form.location">
@@ -406,7 +584,9 @@ function selectedBarangay(id: number | null) {
                 <dl>
                   <dt>Name</dt>
                   <dd>
-                    {{ form.victim_first_name || '—' }} {{ form.victim_last_name }}
+                    {{ form.victim_first_name || '—' }}
+                    {{ form.victim_middle_name }}
+                    {{ form.victim_last_name }}
                   </dd>
                   <dt>Contact</dt><dd>{{ form.victim_contact_number || form.victim_email || '—' }}</dd>
                   <dt>Barangay</dt><dd>{{ selectedBarangay(form.victim_barangay_id) }}</dd>
@@ -417,7 +597,12 @@ function selectedBarangay(id: number | null) {
               <section>
                 <h4>Offender</h4>
                 <dl>
-                  <dt>Name</dt><dd>{{ form.offender_first_name || '—' }}</dd>
+                  <dt>Name</dt>
+                  <dd>
+                    {{ form.offender_first_name || '—' }}
+                    {{ form.offender_middle_name }}
+                    {{ form.offender_last_name }}
+                  </dd>
                   <dt>Sex</dt><dd>{{ form.offender_sex || '—' }}</dd>
                   <dt>Barangay</dt><dd>{{ selectedBarangay(form.offender_barangay_id) }}</dd>
                   <dt>Relationship</dt><dd>{{ form.offender_relationship || '—' }}</dd>
@@ -437,9 +622,14 @@ function selectedBarangay(id: number | null) {
             </label>
           </div>
 
+          <div v-if="submitError" class="alert alert--accent" style="margin-top: var(--space-4)">
+            <strong>We couldn't submit your report.</strong>
+            <p>{{ submitError }}</p>
+          </div>
+
           <!-- Footer nav -->
           <div class="form-nav">
-            <AppButton variant="ghost" @click="back" :disabled="step === 0">Back</AppButton>
+            <AppButton variant="ghost" @click="back" :disabled="step === 0 || submitting">Back</AppButton>
             <AppButton
               v-if="step < steps.length - 1"
               variant="primary"
@@ -450,10 +640,10 @@ function selectedBarangay(id: number | null) {
             <AppButton
               v-else
               variant="accent"
-              :disabled="!form.consent || !form.abuse_name"
+              :disabled="!form.consent || !form.abuse_name || submitting"
               @click="submit"
             >
-              Submit report
+              {{ submitting ? 'Submitting…' : 'Submit report' }}
             </AppButton>
           </div>
         </div>
@@ -685,6 +875,18 @@ function selectedBarangay(id: number | null) {
 }
 .warn-card { background: var(--color-accent-50); border-color: var(--color-accent-100); }
 .warn-card strong { color: var(--color-accent-700); }
+
+.retry-btn {
+  margin-top: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--color-accent-700);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 0;
+  text-decoration: underline;
+}
 
 /* Confirmation */
 .confirm { padding: var(--space-12) 0; display: flex; justify-content: center; }
