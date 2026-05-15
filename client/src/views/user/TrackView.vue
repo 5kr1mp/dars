@@ -1,41 +1,84 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { api } from '../../services/api'
 import AppButton from '../../components/common/AppButton.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 
-const code = ref('')
-const result = ref<null | typeof mockResult>(null)
-const loading = ref(false)
-const notFound = ref(false)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const mockResult = {
-  id: 'SR-9KX2T1',
-  status: 'On the way',
-  abuse: 'Physical',
-  severity: 'High',
-  filed: '2026-05-09 18:42',
-  barangay: 'Brgy. San Isidro',
-  responder: 'PNP-WCPD San Isidro',
-  timeline: [
-    { time: '2026-05-09 18:42', label: 'Report received', status: 'Reported', desc: 'Your report was received and queued for triage.' },
-    { time: '2026-05-09 18:51', label: 'Reviewed', status: 'Dispatched', desc: 'Operator A. Cruz reviewed and dispatched a responder.' },
-    { time: '2026-05-09 19:04', label: 'Responder en route', status: 'On the way', desc: 'PNP-WCPD San Isidro acknowledged the case.' },
-  ],
+interface Report {
+  report_id: string
+  report_status: string
+  reported_at: string
+  age_days?: number
+  abuse_name: string
+  severity: number
+  severity_label: string
+  barangay_name: string
+  latitude?: number | null
+  longitude?: number | null
+  report_description?: string | null
 }
 
-function track() {
-  if (!code.value.trim()) return
+interface HistoryItem {
+  changed_at?: string
+  created_at?: string
+  history_changed_at?: string
+  old_status?: string | null
+  new_status?: string
+  report_status?: string
+  changed_by_name?: string | null
+  notes?: string | null
+}
+
+const code = ref('')
+const result = ref<Report | null>(null)
+const timeline = ref<HistoryItem[]>([])
+const loading = ref(false)
+const errorMsg = ref('')
+
+async function track() {
+  const id = code.value.trim().toLowerCase()
+  result.value = null
+  timeline.value = []
+  errorMsg.value = ''
+
+  if (!id) return
+
+  if (!UUID_REGEX.test(id)) {
+    errorMsg.value =
+      "That doesn't look like a tracking code. Copy the full code from your confirmation email or screen."
+    return
+  }
+
   loading.value = true
-  notFound.value = false
-  setTimeout(() => {
-    if (code.value.toUpperCase().startsWith('SR-')) {
-      result.value = mockResult
-    } else {
-      result.value = null
-      notFound.value = true
-    }
+  try {
+    const [report, history] = await Promise.all([
+      api.get<Report>(`/reports/${id}`),
+      api.get<HistoryItem[]>(`/reports/${id}/history`),
+    ])
+    result.value = report
+    timeline.value = history ?? []
+  } catch (err: any) {
+    errorMsg.value =
+      err?.message || 'We could not look that up right now. Please try again.'
+  } finally {
     loading.value = false
-  }, 500)
+  }
+}
+
+function formatDate(s?: string) {
+  if (!s) return ''
+  const d = new Date(s)
+  return isNaN(d.getTime()) ? s : d.toLocaleString()
+}
+
+function entryTime(t: HistoryItem) {
+  return t.changed_at ?? t.history_changed_at ?? t.created_at ?? ''
+}
+
+function entryStatus(t: HistoryItem) {
+  return t.new_status ?? t.report_status ?? 'Reported'
 }
 </script>
 
@@ -54,7 +97,7 @@ function track() {
         <label>Tracking code</label>
         <input
           v-model="code"
-          placeholder="e.g. SR-9KX2T1"
+          placeholder="e.g. 44288d10-4f7b-11f1-b32d-d843aeceb212"
           @keyup.enter="track"
         />
       </div>
@@ -63,11 +106,11 @@ function track() {
       </AppButton>
     </div>
 
-    <div v-if="notFound" class="card card--padded notfound">
-      <h3>We couldn't find that code.</h3>
+    <div v-if="errorMsg" class="card card--padded notfound">
+      <h3>We couldn't find that report.</h3>
+      <p class="muted">{{ errorMsg }}</p>
       <p class="muted">
-        Tracking codes start with <code>SR-</code>. Double-check the code, or call
-        <a href="tel:1366">1366</a> for assistance.
+        Double-check the code, or call <a href="tel:1366">1366</a> for assistance.
       </p>
     </div>
 
@@ -78,45 +121,46 @@ function track() {
           <div class="row row--between" style="margin-bottom: 12px">
             <div>
               <div class="muted small">Report ID</div>
-              <strong style="font-family: var(--font-display); font-size: 22px">
-                {{ result.id }}
+              <strong
+                style="font-family: var(--font-display); font-size: 18px; word-break: break-all"
+              >
+                {{ result.report_id }}
               </strong>
             </div>
-            <StatusBadge :status="result.status" />
+            <StatusBadge :status="result.report_status" />
           </div>
           <dl class="kv">
-            <dt>Type</dt><dd>{{ result.abuse }} ({{ result.severity }})</dd>
-            <dt>Filed</dt><dd>{{ result.filed }}</dd>
-            <dt>Barangay</dt><dd>{{ result.barangay }}</dd>
-            <dt>Assigned to</dt><dd>{{ result.responder }}</dd>
+            <dt>Type</dt>
+            <dd>{{ result.abuse_name }} ({{ result.severity_label }})</dd>
+            <dt>Severity</dt><dd>{{ result.severity }}/10</dd>
+            <dt>Filed</dt><dd>{{ formatDate(result.reported_at) }}</dd>
+            <dt>Barangay</dt><dd>{{ result.barangay_name }}</dd>
           </dl>
-          <div class="contact-block">
-            <strong>Need to add information?</strong>
-            <p class="muted small">
-              You can add details, send a message to your assigned responder, or escalate
-              if your situation has changed.
-            </p>
-            <div class="row" style="gap: 8px; flex-wrap: wrap">
-              <AppButton variant="secondary" size="sm">Add details</AppButton>
-              <AppButton variant="secondary" size="sm">Message responder</AppButton>
-              <AppButton variant="accent" size="sm">Escalate / urgent</AppButton>
-            </div>
-          </div>
         </div>
 
         <!-- Timeline -->
         <div class="card card--padded timeline-card">
           <h3>Activity</h3>
-          <ol class="timeline">
-            <li v-for="(t, i) in result.timeline" :key="i" :class="{ first: i === result.timeline.length - 1 }">
+          <p v-if="timeline.length === 0" class="muted">
+            No status changes yet — your report has been received and is awaiting review.
+          </p>
+          <ol v-else class="timeline">
+            <li
+              v-for="(t, i) in timeline"
+              :key="i"
+              :class="{ first: i === 0 }"
+            >
               <span class="dot" />
               <div class="t-body">
                 <div class="t-head">
-                  <strong>{{ t.label }}</strong>
-                  <StatusBadge :status="t.status" />
+                  <strong>{{ entryStatus(t) }}</strong>
+                  <StatusBadge :status="entryStatus(t)" />
                 </div>
-                <p class="muted">{{ t.desc }}</p>
-                <span class="t-time">{{ t.time }}</span>
+                <p v-if="t.notes" class="muted">{{ t.notes }}</p>
+                <p v-else-if="t.old_status" class="muted">
+                  Status changed from {{ t.old_status }} to {{ entryStatus(t) }}.
+                </p>
+                <span class="t-time">{{ formatDate(entryTime(t)) }}</span>
               </div>
             </li>
           </ol>
@@ -140,6 +184,7 @@ function track() {
 .notfound {
   background: var(--color-warning-bg);
   border-color: #f0deae;
+  margin-bottom: 24px;
 }
 
 .result-layout { grid-template-columns: 1fr 1.4fr; align-items: start; }
@@ -156,12 +201,6 @@ function track() {
 }
 .kv dt { color: var(--color-text-soft); font-weight: 600; }
 .kv dd { margin: 0; }
-
-.contact-block {
-  margin-top: 6px;
-  padding-top: 6px;
-}
-.contact-block p { margin: 4px 0 10px; }
 
 .timeline { list-style: none; padding: 0; margin: 14px 0 0; position: relative; }
 .timeline::before {
