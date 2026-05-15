@@ -1,5 +1,53 @@
 <script setup lang="ts">
-    
+import { computed, onMounted, ref } from 'vue'
+import { api } from '../../services/api'
+
+interface Barangay {
+  barangay_id?: number
+  id?: number
+  barangay_name: string
+  open_report_count?: number | string
+}
+
+const barangays = ref<Barangay[]>([])
+const loading = ref(true)
+const errorMsg = ref('')
+
+onMounted(async () => {
+  try {
+    barangays.value = (await api.get<Barangay[]>('/barangay')) ?? []
+  } catch (err: any) {
+    errorMsg.value = err?.message || 'Could not load barangays from the server.'
+    barangays.value = []
+  } finally {
+    loading.value = false
+  }
+})
+
+// vw_barangay returns open_report_count as a string in some MySQL configs; coerce to number.
+function openCount(b: Barangay): number {
+  return Number(b.open_report_count ?? 0) || 0
+}
+
+// Sort by activity (busiest first), break ties alphabetically. Pick top 5.
+const topBarangays = computed(() =>
+  [...barangays.value]
+    .sort((a, b) => {
+      const diff = openCount(b) - openCount(a)
+      return diff !== 0 ? diff : a.barangay_name.localeCompare(b.barangay_name)
+    })
+    .slice(0, 5),
+)
+
+const totalOpen = computed(() =>
+  barangays.value.reduce((sum, b) => sum + openCount(b), 0),
+)
+
+function badgeClass(count: number): string {
+  if (count === 0) return 'bdg success'
+  if (count <= 2) return 'bdg warn'
+  return 'bdg danger'
+}
 </script>
 
 <template>
@@ -7,36 +55,36 @@
     <div class="row row--between">
         <div>
         <div class="muted small">Live response activity</div>
-        <h3 class="card-title">Brgy. responders · today</h3>
+        <h3 class="card-title">Active cases by barangay</h3>
         </div>
         <span class="live-dot"><span /></span>
     </div>
-    <ul class="response-list">
-        <li>
-        <span class="bdg success">Resolved</span>
-        <span class="muted">Brgy. San Isidro · 12 min ago</span>
-        </li>
-        <li>
-        <span class="bdg warn">On the way</span>
-        <span class="muted">Brgy. Maligaya · 4 min ago</span>
-        </li>
-        <li>
-        <span class="bdg info">Dispatched</span>
-        <span class="muted">Brgy. Bagong Silang · just now</span>
+    <p v-if="loading" class="muted small response-empty">
+        Loading…
+    </p>
+    <p v-else-if="errorMsg" class="response-empty response-error">
+        Couldn't reach the server: {{ errorMsg }}
+    </p>
+    <p v-else-if="topBarangays.length === 0" class="muted small response-empty">
+        No barangays configured yet.
+    </p>
+    <ul v-else class="response-list">
+        <li v-for="b in topBarangays" :key="b.barangay_name">
+        <span :class="badgeClass(openCount(b))">{{ openCount(b) }}</span>
+        <span class="brgy-name">{{ b.barangay_name }}</span>
+        <span class="muted small">
+            {{ openCount(b) === 0 ? 'Clear' : openCount(b) === 1 ? '1 open case' : openCount(b) + ' open cases' }}
+        </span>
         </li>
     </ul>
     <div class="metric-row">
         <div>
-        <div class="metric-value">128</div>
-        <div class="muted small">Reports this month</div>
+        <div class="metric-value">{{ barangays.length || '—' }}</div>
+        <div class="muted small">Barangays covered</div>
         </div>
         <div>
-        <div class="metric-value">22 min</div>
-        <div class="muted small">Avg. response</div>
-        </div>
-        <div>
-        <div class="metric-value">94%</div>
-        <div class="muted small">Resolved on-site</div>
+        <div class="metric-value">{{ loading ? '—' : totalOpen }}</div>
+        <div class="muted small">Active cases</div>
         </div>
     </div>
     </div>
@@ -100,18 +148,42 @@
     }
 
     .response-list li {
-    display: flex;
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
     align-items: center;
     gap: var(--space-2-5, 10px);
     font-size: 13px;
     }
 
-    .bdg {
-    display: inline-block;
-    font-size: 11px;
+    .brgy-name {
     font-weight: 600;
-    padding: 2px var(--space-2);
-    border-radius: 4px;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    }
+
+    .response-empty {
+    margin: var(--space-4) 0 0;
+    padding-top: var(--space-3-5, 14px);
+    border-top: 1px solid var(--color-border);
+    }
+
+    .response-error {
+    color: var(--color-danger);
+    font-size: 12px;
+    }
+
+    .bdg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0 var(--space-1-5, 6px);
+    border-radius: 6px;
     letter-spacing: 0.01em;
     }
 
@@ -125,9 +197,9 @@
     color: var(--color-warning);
     }
 
-    .bdg.info {
-    background: var(--color-info-bg);
-    color: var(--color-info);
+    .bdg.danger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
     }
 
     .metric-row {
@@ -135,13 +207,14 @@
     padding-top: var(--space-3-5, 14px);
     border-top: 1px solid var(--color-border);
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-2);
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    text-align: center;
     }
 
     .metric-value {
     font-family: var(--font-display);
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--color-text);
     line-height: 1.2;
