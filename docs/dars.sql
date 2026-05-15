@@ -1,3 +1,4 @@
+-- Active: 1778748742576@@127.0.0.1@3306@dars
 create database dars;
 use dars;
 
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS staff (
     id INT PRIMARY KEY AUTO_INCREMENT,
 
     email VARCHAR(60) UNIQUE NOT NULL,
+    contact_number VARCHAR(20),
 
     password VARCHAR(255) NOT NULL,
 
@@ -46,12 +48,16 @@ CREATE TABLE IF NOT EXISTS staff (
         'operator'
     ) NOT NULL,
 
-    contact_number VARCHAR(15),
+    barangay_id INT NULL,
 
-    created_at TIMESTAMP
-    DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (barangay_id) REFERENCES barangay(id)
+        ON DELETE SET NULL
 );
-
+-- login proc returns barangay_id so the JWT can carry it
+DROP PROCEDURE IF EXISTS sp_staff_login_lookup;
+DELIMITER $$
 -- =====================================================
 -- victim table
 -- =====================================================
@@ -118,11 +124,8 @@ CREATE TABLE IF NOT EXISTS offender (
 -- =====================================================
 CREATE TABLE IF NOT EXISTS abuse_type (
     abuse_name VARCHAR(20) PRIMARY KEY,
-
     abuse_description VARCHAR(100) NOT NULL,
-
     severity TINYINT NOT NULL,
-
     law_reference VARCHAR(50)
 );
 
@@ -134,15 +137,10 @@ CREATE TABLE IF NOT EXISTS report (
     PRIMARY KEY DEFAULT (UUID()),
 
     victim_id INT NOT NULL,
-
     offender_id INT,
-
     abuse_name VARCHAR(20) NOT NULL,
-
     barangay_id INT NOT NULL,
-
     latitude DECIMAL(10,8),
-
     longitude DECIMAL(11,8),
 
     report_description TEXT,
@@ -306,6 +304,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX idx_report_status
 ON report(report_status);
 
+CREATE INDEX idx_staff_barangay
+ON staff(barangay_id);
+
 CREATE INDEX idx_report_date
 ON report(reported_at);
 
@@ -457,6 +458,24 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- ----------------------------------------------------
+-- Staff with email exists (boolean)
+-- ----------------------------------------------------
+DROP FUNCTION IF EXISTS fn_staff_email_exists$$
+CREATE FUNCTION fn_staff_email_exists(p_email VARCHAR(60))
+RETURNS BOOLEAN
+DETERMINISTIC
+BEGIN
+    DECLARE v_count INT;
+
+    SELECT COUNT(*) INTO v_count
+    FROM staff
+    WHERE email = p_email;
+
+    RETURN v_count > 0;
+END$$
+
 
 -- ----------------------------------------------------
 -- barangay list with open report count
@@ -652,16 +671,30 @@ FROM audit_log al
 LEFT JOIN staff s ON s.id = al.performed_by;
 
 -- ----------------------------------------------------
+-- human-readable audit log
+-- ----------------------------------------------------
+CREATE OR REPLACE VIEW vw_assigned_operator AS
+SELECT s.id AS staff_id,
+       fn_full_name(s.first_name, s.middle_name, s.last_name) AS full_name,
+       s.email,
+       s.contact_number,
+       s.barangay_id,
+       b.barangay_name
+FROM staff s
+JOIN barangay b ON b.id = s.barangay_id
+WHERE s.user_role = 'operator';
+
+-- ----------------------------------------------------
 --  responder summary
 -- ----------------------------------------------------
 CREATE OR REPLACE VIEW vw_responder AS
 SELECT
-    r.id                                        AS responder_id,
+    r.id AS responder_id,
     r.responder_name,
     r.agency,
     r.contact_number,
-    COUNT(d.id)                                 AS total_dispatches,
-    SUM(d.dispatch_status = 'Completed')        AS completed_dispatches
+    COUNT(d.id) AS total_dispatches,
+    COALESCE(SUM(d.dispatch_status = 'Completed'),0) AS completed_dispatches
 FROM responder r
 LEFT JOIN dispatch d ON d.responder_id = r.id
 GROUP BY r.id, r.responder_name, r.agency, r.contact_number;
@@ -818,6 +851,22 @@ BEGIN
     SELECT ROW_COUNT() AS rows_affected;
 END$$
 
+DROP PROCEDURE IF EXISTS sp_staff_login_lookup$$
+CREATE PROCEDURE sp_staff_login_lookup(
+    IN p_email VARCHAR(60)
+)
+BEGIN
+    SELECT
+        id,
+        email,
+        password,
+        user_role,
+        first_name,
+        last_name
+    FROM staff
+    WHERE email = p_email
+    LIMIT 1;
+END$$
 -- =============================================
 -- VICTIM procedures
 -- =============================================
@@ -993,7 +1042,7 @@ END$$
 -- =============================================
 -- REPORT procedures
 -- =============================================
---- UPDATED PROCEDUR
+-- UPDATED PROCEDUR
 DROP PROCEDURE IF EXISTS sp_report_create$$
 CREATE PROCEDURE sp_report_create(
     IN p_victim_id          INT,
