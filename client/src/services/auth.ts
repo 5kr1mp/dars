@@ -10,7 +10,10 @@ export interface SafeUser {
   email: string
   first_name: string
   last_name: string
-  role: UserRole
+  /** Matches the server payload (`user_role`), not `role`. */
+  user_role: UserRole
+  /** Set for operators assigned to a barangay; null for admins/system_admins. */
+  barangay_id?: number | null
 }
 
 interface LoginResponse {
@@ -57,7 +60,7 @@ export const useAuth = () => {
   const user = computed(() => state.user)
 
   /** Role of the current user: `'system_admin'`, `'admin'`, `'operator'`, or `null`. */
-  const role = computed(() => state.user?.role ?? null)
+  const role = computed(() => state.user?.user_role ?? null)
 
   /**
    * Authenticates via `POST /auth/login`, persists the JWT and user profile
