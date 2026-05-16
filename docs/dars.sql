@@ -1,5 +1,6 @@
--- Active: 1778748742576@@127.0.0.1@3306@dars
-create database dars;
+-- Active: 1778912274940@@127.0.0.1@3306
+drop database if exists dars;
+create database if not exists dars;
 use dars;
 
 -- =====================================================
@@ -55,9 +56,7 @@ CREATE TABLE IF NOT EXISTS staff (
     FOREIGN KEY (barangay_id) REFERENCES barangay(id)
         ON DELETE SET NULL
 );
--- login proc returns barangay_id so the JWT can carry it
-DROP PROCEDURE IF EXISTS sp_staff_login_lookup;
-DELIMITER $$
+
 -- =====================================================
 -- victim table
 -- =====================================================
@@ -465,33 +464,6 @@ BEGIN
 END$$
 
 -- ----------------------------------------------------
--- generate next report ID in RP-YYYYMMDD-XXXX format
--- ----------------------------------------------------
-DROP FUNCTION IF EXISTS fn_generate_report_id$$
-CREATE FUNCTION fn_generate_report_id()
-RETURNS VARCHAR(20)
-MODIFIES SQL DATA
-NOT DETERMINISTIC
-BEGIN
-    DECLARE v_date DATE;
-    DECLARE v_seq  INT UNSIGNED;
-
-    SET v_date = CURDATE();
-
-    INSERT INTO report_id_seq (seq_date, last_seq)
-    VALUES (v_date, 1)
-    ON DUPLICATE KEY UPDATE last_seq = last_seq + 1;
-
-    SELECT last_seq INTO v_seq
-    FROM report_id_seq
-    WHERE seq_date = v_date;
-
-    RETURN CONCAT('RP-', DATE_FORMAT(v_date, '%Y%m%d'), '-', LPAD(v_seq, 4, '0'));
-END$$
-
-DELIMITER ;
-
--- ----------------------------------------------------
 -- Staff with email exists (boolean)
 -- ----------------------------------------------------
 DROP FUNCTION IF EXISTS fn_staff_email_exists$$
@@ -508,6 +480,7 @@ BEGIN
     RETURN v_count > 0;
 END$$
 
+DELIMITER ;
 
 -- ----------------------------------------------------
 -- barangay list with open report count
@@ -703,7 +676,7 @@ FROM audit_log al
 LEFT JOIN staff s ON s.id = al.performed_by;
 
 -- ----------------------------------------------------
--- human-readable audit log
+-- operators with their assigned barangay
 -- ----------------------------------------------------
 CREATE OR REPLACE VIEW vw_assigned_operator AS
 SELECT s.id AS staff_id,
@@ -1078,7 +1051,7 @@ END$$
 -- =============================================
 -- REPORT procedures
 -- =============================================
--- UPDATED PROCEDUR
+
 DROP PROCEDURE IF EXISTS sp_report_create$$
 CREATE PROCEDURE sp_report_create(
     IN p_victim_id          INT,
@@ -1090,15 +1063,12 @@ CREATE PROCEDURE sp_report_create(
     IN p_report_description TEXT
 )
 BEGIN
-    DECLARE v_id VARCHAR(20);
-    SET v_id = fn_generate_report_id();
-
     INSERT INTO report
-        (id, victim_id, offender_id, abuse_name, barangay_id, latitude, longitude, report_description)
+        (victim_id, offender_id, abuse_name, barangay_id, latitude, longitude, report_description)
     VALUES
-        (v_id, p_victim_id, p_offender_id, p_abuse_name, p_barangay_id, p_latitude, p_longitude, p_report_description);
+        (p_victim_id, p_offender_id, p_abuse_name, p_barangay_id, p_latitude, p_longitude, p_report_description);
 
-    SELECT v_id AS new_report_id;
+    SELECT @last_report_id AS new_report_id;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_report_get$$
@@ -1658,9 +1628,24 @@ CREATE TRIGGER trg_report_before_insert
 BEFORE INSERT ON report
 FOR EACH ROW
 BEGIN
+    DECLARE v_date DATE;
+    DECLARE v_seq  INT UNSIGNED;
+
     IF NEW.id IS NULL OR NEW.id = '' THEN
-        SET NEW.id = fn_generate_report_id();
+        SET v_date = CURDATE();
+
+        INSERT INTO report_id_seq (seq_date, last_seq)
+        VALUES (v_date, 1)
+        ON DUPLICATE KEY UPDATE last_seq = last_seq + 1;
+
+        SELECT last_seq INTO v_seq
+        FROM report_id_seq WHERE seq_date = v_date;
+
+        SET NEW.id = CONCAT('RP-', DATE_FORMAT(v_date, '%Y%m%d'), '-', LPAD(v_seq, 4, '0'));
     END IF;
+
+    -- expose the final ID to the calling procedure via session variable
+    SET @last_report_id = NEW.id;
 END$$
 
 DROP TRIGGER IF EXISTS trg_report_after_insert$$
