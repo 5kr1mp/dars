@@ -1,19 +1,9 @@
+import type { SafeUser, UserRole } from '@/types';
 import { reactive, computed } from 'vue'
 import { api } from './api'
 import router from '../router'
-
-export type UserRole = 'system_admin' | 'admin' | 'operator'
-
 /** Public user fields returned by the server after login (no password). */
-export interface SafeUser {
-  id: number
-  email: string
-  first_name: string
-  last_name: string
-  role: UserRole
-}
-
-interface LoginResponse {
+interface LoginData {
   token: string
   safe_user: SafeUser
 }
@@ -59,6 +49,9 @@ export const useAuth = () => {
   /** Role of the current user: `'system_admin'`, `'admin'`, `'operator'`, or `null`. */
   const role = computed(() => state.user?.role ?? null)
 
+  /** Barangay assignment of the staff */
+  const barangay = computed(() => state.user?.barangay_name)
+
   /**
    * Authenticates via `POST /auth/login`, persists the JWT and user profile
    * to localStorage, updates reactive state, then navigates to the dashboard.
@@ -66,11 +59,12 @@ export const useAuth = () => {
    * @throws If credentials are invalid or the server returns an error.
    */
   async function login(email: string, password: string): Promise<void> {
-    const res = await api.post<LoginResponse>('/auth/login', { email, password })
-    state.token = res.token
-    state.user = res.safe_user
-    localStorage.setItem(TOKEN_KEY, res.token)
-    localStorage.setItem(USER_KEY, JSON.stringify(res.safe_user))
+    const res = await api.post<LoginData>('/auth/login', { email, password })
+    const loginData = res.data;
+    state.token = loginData.token
+    state.user = loginData.safe_user
+    localStorage.setItem(TOKEN_KEY, loginData.token)
+    localStorage.setItem(USER_KEY, JSON.stringify(loginData.safe_user))
     router.push('/staff/dashboard')
   }
 
@@ -85,5 +79,5 @@ export const useAuth = () => {
     router.push('/staff/login')
   }
 
-  return { isLoggedIn, user, role, login, logout }
+  return { isLoggedIn, user, role, barangay, login, logout}
 }
