@@ -852,19 +852,23 @@ BEGIN
 END$$
 
 DROP PROCEDURE IF EXISTS sp_staff_login_lookup$$
+
 CREATE PROCEDURE sp_staff_login_lookup(
     IN p_email VARCHAR(60)
 )
 BEGIN
     SELECT
-        id,
-        email,
-        password,
-        user_role,
-        first_name,
-        last_name
-    FROM staff
-    WHERE email = p_email
+        s.id,
+        s.email,
+        s.password,
+        s.user_role,
+        s.first_name,
+        s.last_name,
+        b.id,
+        b.barangay_name,
+    FROM staff as s
+    INNER JOIN barangay as b ON s.barangay_id = b.id 
+    WHERE s.email = p_email
     LIMIT 1;
 END$$
 -- =============================================
