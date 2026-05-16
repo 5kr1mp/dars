@@ -1,31 +1,13 @@
 import type { Response } from "express";
 import type { RowDataPacket } from "mysql2";
 import type { AuthRequest, ReportStatus } from "../config/types.js";
+import type { ReportRow } from "../config/types.js";
 import { getConn } from "../config/db.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { getIo } from "../sockets/reportSockets.js";
 
 const VALID_STATUSES: ReportStatus[] = ['Reported', 'Dispatched', 'Under Investigation', 'Resolved'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-interface ReportRow extends RowDataPacket {
-    report_id: string;
-    report_status: ReportStatus;
-    reported_at: Date;
-    age_days: number;
-    dispatch_count: number;
-    victim_name: string;
-    victim_contact: string | null;
-    offender_name: string | null;
-    offender_sex: string | null;
-    abuse_name: string;
-    severity: number;
-    severity_label: string;
-    barangay_name: string;
-    latitude: number | null;
-    longitude: number | null;
-    report_description: string | null;
-}
 
 export const getAllReports = async (req: AuthRequest, res: Response) => {
     const { status, barangay_id, abuse_name } = req.query;

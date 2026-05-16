@@ -1,19 +1,35 @@
+import type { JwtUserPayload, ReportRow} from "../config/types.js";
 import { Server } from "socket.io";
+import jwt from 'jsonwebtoken';
 
 let _io: Server;
 
 export const initReportSockets = (io: Server) => {
     _io = io;
 
-    io.on("connection", (socket) => {
-        // clients can subscribe to a specific barangay room
-        socket.on("join:barangay", (barangayId: number) => {
-            socket.join(`barangay:${barangayId}`);
-        });
+    // only staff can connect to socket
+    io.use((socket,next) => {
+        const token = socket.handshake.auth?.token
 
-        socket.on("leave:barangay", (barangayId: number) => {
-            socket.leave(`barangay:${barangayId}`);
-        });
+        if (!token) return next(new Error('Unauthorized'))
+
+        try {
+            const payload = jwt.verify(token, process.env.JWT_SECRET!)
+            socket.data.user = payload
+            next()
+        } catch {
+            next (new Error('Unauthorized'))
+        }
+    });
+
+    io.on("connection", (socket) => {
+
+        const user = socket.data.user as JwtUserPayload;
+
+        // operator
+        if (user.barangay_id) socket.join(`barangay:${user.barangay_id}`)
+        // admin and sys admin
+        else socket.join('global')
     });
 };
 

@@ -1,4 +1,5 @@
 import type { Request } from "express";
+import type { RowDataPacket } from "mysql2";
 
 export type UserRole = "system_admin" | "admin" | "operator";
 
@@ -22,6 +23,25 @@ export interface JwtUserPayload {
   staff_id: number;
   user_role: UserRole;
   barangay_id: number | null;
+}
+
+export interface ReportRow extends RowDataPacket {
+    report_id: string;
+    report_status: ReportStatus;
+    reported_at: Date;
+    age_days: number;
+    dispatch_count: number;
+    victim_name: string;
+    victim_contact: string | null;
+    offender_name: string | null;
+    offender_sex: string | null;
+    abuse_name: string;
+    severity: number;
+    severity_label: string;
+    barangay_name: string;
+    latitude: number | null;
+    longitude: number | null;
+    report_description: string | null;
 }
 
 export interface AuthRequest extends Request {

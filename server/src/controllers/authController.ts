@@ -14,6 +14,7 @@ interface PasswordLookupResult extends RowDataPacket {
     first_name : string;
     last_name : string;
     barangay_id : number | null;
+    barangay_name : string;
 }
 
 export async function login(req : Request, res : Response) {
