@@ -130,11 +130,18 @@ CREATE TABLE IF NOT EXISTS abuse_type (
 );
 
 -- =====================================================
+-- report_id_seq table  (daily sequence counter for RP-YYYYMMDD-XXXX IDs)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS report_id_seq (
+    seq_date DATE PRIMARY KEY,
+    last_seq  INT UNSIGNED NOT NULL DEFAULT 0
+);
+
+-- =====================================================
 -- report table
 -- =====================================================
 CREATE TABLE IF NOT EXISTS report (
-    id CHAR(36)
-    PRIMARY KEY DEFAULT (UUID()),
+    id VARCHAR(20) NOT NULL PRIMARY KEY,
 
     victim_id INT NOT NULL,
     offender_id INT,
@@ -203,7 +210,7 @@ CREATE TABLE IF NOT EXISTS responder (
 CREATE TABLE IF NOT EXISTS dispatch (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    report_id CHAR(36) NOT NULL,
+    report_id VARCHAR(20) NOT NULL,
 
     responder_id INT NOT NULL,
 
@@ -233,7 +240,7 @@ CREATE TABLE IF NOT EXISTS dispatch (
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS resolved_report (
-    report_id CHAR(36)
+    report_id VARCHAR(20)
     PRIMARY KEY,
 
     operator_id INT NOT NULL,
@@ -258,7 +265,7 @@ CREATE TABLE IF NOT EXISTS resolved_report (
 CREATE TABLE IF NOT EXISTS report_status_history (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-    report_id CHAR(36) NOT NULL,
+    report_id VARCHAR(20) NOT NULL,
 
     old_status VARCHAR(50),
 
@@ -430,7 +437,7 @@ END$$
 -- total dispatches for a report
 -- ----------------------------------------------------
 DROP FUNCTION IF EXISTS fn_dispatch_count$$
-CREATE FUNCTION fn_dispatch_count(p_report_id CHAR(36))
+CREATE FUNCTION fn_dispatch_count(p_report_id VARCHAR(20))
 RETURNS INT
 READS SQL DATA
 BEGIN
@@ -455,6 +462,31 @@ BEGIN
     WHERE barangay_id = p_barangay_id
       AND report_status <> 'Resolved';
     RETURN v_count;
+END$$
+
+-- ----------------------------------------------------
+-- generate next report ID in RP-YYYYMMDD-XXXX format
+-- ----------------------------------------------------
+DROP FUNCTION IF EXISTS fn_generate_report_id$$
+CREATE FUNCTION fn_generate_report_id()
+RETURNS VARCHAR(20)
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+BEGIN
+    DECLARE v_date DATE;
+    DECLARE v_seq  INT UNSIGNED;
+
+    SET v_date = CURDATE();
+
+    INSERT INTO report_id_seq (seq_date, last_seq)
+    VALUES (v_date, 1)
+    ON DUPLICATE KEY UPDATE last_seq = last_seq + 1;
+
+    SELECT last_seq INTO v_seq
+    FROM report_id_seq
+    WHERE seq_date = v_date;
+
+    RETURN CONCAT('RP-', DATE_FORMAT(v_date, '%Y%m%d'), '-', LPAD(v_seq, 4, '0'));
 END$$
 
 DELIMITER ;
@@ -1058,8 +1090,8 @@ CREATE PROCEDURE sp_report_create(
     IN p_report_description TEXT
 )
 BEGIN
-    DECLARE v_id CHAR(36);
-    SET v_id = UUID();
+    DECLARE v_id VARCHAR(20);
+    SET v_id = fn_generate_report_id();
 
     INSERT INTO report
         (id, victim_id, offender_id, abuse_name, barangay_id, latitude, longitude, report_description)
@@ -1070,7 +1102,7 @@ BEGIN
 END$$
 
 DROP PROCEDURE IF EXISTS sp_report_get$$
-CREATE PROCEDURE sp_report_get(IN p_id CHAR(36))
+CREATE PROCEDURE sp_report_get(IN p_id VARCHAR(20))
 BEGIN
     IF p_id IS NULL THEN
         SELECT * FROM vw_report ORDER BY reported_at DESC;
@@ -1097,7 +1129,7 @@ END$$
 
 DROP PROCEDURE IF EXISTS sp_report_update_status$$
 CREATE PROCEDURE sp_report_update_status(
-    IN p_id          CHAR(36),
+    IN p_id          VARCHAR(20),
     IN p_new_status  ENUM('Reported','Dispatched','Under Investigation','Resolved'),
     IN p_staff_id    INT
 )
@@ -1114,7 +1146,7 @@ END$$
 
 DROP PROCEDURE IF EXISTS sp_report_update$$
 CREATE PROCEDURE sp_report_update(
-    IN p_id                 CHAR(36),
+    IN p_id                 VARCHAR(20),
     IN p_offender_id        INT,
     IN p_report_description TEXT,
     IN p_latitude           DECIMAL(10,8),
@@ -1131,7 +1163,7 @@ BEGIN
 END$$
 
 DROP PROCEDURE IF EXISTS sp_report_delete$$
-CREATE PROCEDURE sp_report_delete(IN p_id CHAR(36))
+CREATE PROCEDURE sp_report_delete(IN p_id VARCHAR(20))
 BEGIN
     DELETE FROM report WHERE id = p_id;
     SELECT ROW_COUNT() AS rows_affected;
@@ -1192,7 +1224,7 @@ END$$
 
 DROP PROCEDURE IF EXISTS sp_dispatch_create$$
 CREATE PROCEDURE sp_dispatch_create(
-    IN p_report_id    CHAR(36),
+    IN p_report_id    VARCHAR(20),
     IN p_responder_id INT,
     IN p_remarks      TEXT
 )
@@ -1213,7 +1245,7 @@ BEGIN
 END$$
 
 DROP PROCEDURE IF EXISTS sp_dispatch_get_by_report$$
-CREATE PROCEDURE sp_dispatch_get_by_report(IN p_report_id CHAR(36))
+CREATE PROCEDURE sp_dispatch_get_by_report(IN p_report_id VARCHAR(20))
 BEGIN
     SELECT * FROM vw_dispatch WHERE report_id = p_report_id ORDER BY dispatch_time DESC;
 END$$
@@ -1245,7 +1277,7 @@ END$$
 
 DROP PROCEDURE IF EXISTS sp_resolved_report_create$$
 CREATE PROCEDURE sp_resolved_report_create(
-    IN p_report_id          CHAR(36),
+    IN p_report_id          VARCHAR(20),
     IN p_operator_id        INT,
     IN p_resolution_summary TEXT
 )
@@ -1256,7 +1288,7 @@ BEGIN
 END$$
 
 DROP PROCEDURE IF EXISTS sp_resolved_report_get$$
-CREATE PROCEDURE sp_resolved_report_get(IN p_report_id CHAR(36))
+CREATE PROCEDURE sp_resolved_report_get(IN p_report_id VARCHAR(20))
 BEGIN
     IF p_report_id IS NULL THEN
         SELECT * FROM vw_resolved_report ORDER BY resolved_at DESC;
@@ -1267,7 +1299,7 @@ END$$
 
 DROP PROCEDURE IF EXISTS sp_resolved_report_update$$
 CREATE PROCEDURE sp_resolved_report_update(
-    IN p_report_id          CHAR(36),
+    IN p_report_id          VARCHAR(20),
     IN p_resolution_summary TEXT
 )
 BEGIN
@@ -1278,7 +1310,7 @@ BEGIN
 END$$
 
 DROP PROCEDURE IF EXISTS sp_resolved_report_delete$$
-CREATE PROCEDURE sp_resolved_report_delete(IN p_report_id CHAR(36))
+CREATE PROCEDURE sp_resolved_report_delete(IN p_report_id VARCHAR(20))
 BEGIN
     DELETE FROM resolved_report WHERE report_id = p_report_id;
     SELECT ROW_COUNT() AS rows_affected;
@@ -1316,7 +1348,7 @@ END$$
 -- =============================================
 
 DROP PROCEDURE IF EXISTS sp_report_status_history_get$$
-CREATE PROCEDURE sp_report_status_history_get(IN p_report_id CHAR(36))
+CREATE PROCEDURE sp_report_status_history_get(IN p_report_id VARCHAR(20))
 BEGIN
     SELECT * FROM vw_report_status_history
     WHERE report_id = p_report_id
@@ -1621,6 +1653,16 @@ END$$
 -- =============================================
 -- report triggers
 -- =============================================
+DROP TRIGGER IF EXISTS trg_report_before_insert$$
+CREATE TRIGGER trg_report_before_insert
+BEFORE INSERT ON report
+FOR EACH ROW
+BEGIN
+    IF NEW.id IS NULL OR NEW.id = '' THEN
+        SET NEW.id = fn_generate_report_id();
+    END IF;
+END$$
+
 DROP TRIGGER IF EXISTS trg_report_after_insert$$
 CREATE TRIGGER trg_report_after_insert
 AFTER INSERT ON report

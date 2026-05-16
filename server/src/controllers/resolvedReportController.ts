@@ -4,8 +4,7 @@ import { getConn } from "../config/db.js";
 import { sendError, sendSuccess } from "../utils/response.js";
 import type { AuthRequest } from "../config/types.js";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
+const REPORT_ID_REGEX = /^RP-\d{8}-\d{4,}$/;
 /**
  * POST /api/reports/:id/resolve
  * Body: { resolution_summary? }
@@ -15,7 +14,7 @@ export const resolveReport = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
     const { resolution_summary } = req.body;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, "Invalid report ID format");
         return;
     }
@@ -71,7 +70,7 @@ export const resolveReport = async (req: AuthRequest, res: Response) => {
 export const getResolvedReport = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, "Invalid report ID format");
         return;
     }
@@ -119,7 +118,7 @@ export const getResolvedReport = async (req: AuthRequest, res: Response) => {
 export const unresolveReport = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, "Invalid report ID format");
         return;
     }

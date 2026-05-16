@@ -72,16 +72,27 @@ INSERT INTO responder (id, responder_name, agency, contact_number) VALUES
 (4, 'Banilad Barangay Hall',    'BPO',  '09322324444');
 
 -- =====================================================
+-- Seed report_id_seq so IDs match the fixed values above
+-- =====================================================
+INSERT INTO report_id_seq (seq_date, last_seq) VALUES
+('2026-04-10', 1),
+('2026-04-12', 1),
+('2026-04-15', 1),
+('2026-04-20', 1),
+('2026-05-01', 1),
+('2026-05-05', 1);
+
+-- =====================================================
 -- Reports
--- Fixed UUIDs make it easy to reference in reset script.
+-- Fixed IDs make it easy to reference in reset script.
 -- Statuses are driven by dispatches and resolved_report below.
 -- =====================================================
-SET @r1 = '00000001-0000-0000-0000-000000000001';
-SET @r2 = '00000001-0000-0000-0000-000000000002';
-SET @r3 = '00000001-0000-0000-0000-000000000003';
-SET @r4 = '00000001-0000-0000-0000-000000000004';
-SET @r5 = '00000001-0000-0000-0000-000000000005';
-SET @r6 = '00000001-0000-0000-0000-000000000006';
+SET @r1 = 'RP-20260410-0001';
+SET @r2 = 'RP-20260412-0001';
+SET @r3 = 'RP-20260415-0001';
+SET @r4 = 'RP-20260420-0001';
+SET @r5 = 'RP-20260501-0001';
+SET @r6 = 'RP-20260505-0001';
 
 INSERT INTO report (id, victim_id, offender_id, abuse_name, barangay_id, latitude, longitude, report_description, reported_at) VALUES
 (@r1, 1, 1, 'Physical',      1, 10.32050000, 123.91520000,

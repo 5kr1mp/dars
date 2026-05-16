@@ -7,7 +7,7 @@ import { sendSuccess, sendError } from "../utils/response.js";
 import { getIo } from "../sockets/reportSockets.js";
 
 const VALID_STATUSES: ReportStatus[] = ['Reported', 'Dispatched', 'Under Investigation', 'Resolved'];
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const REPORT_ID_REGEX = /^RP-\d{8}-\d{4,}$/;
 
 export const getAllReports = async (req: AuthRequest, res: Response) => {
     const { status, barangay_id, abuse_name } = req.query;
@@ -57,7 +57,7 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
 export const getReportById = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, 'Invalid report ID format');
         return;
     }
@@ -140,7 +140,7 @@ export const updateReport = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
     const { offender_id, report_description, latitude, longitude } = req.body;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, 'Invalid report ID format');
         return;
     }
@@ -186,7 +186,7 @@ export const updateReportStatus = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
     const { new_status } = req.body;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, 'Invalid report ID format');
         return;
     }
@@ -230,7 +230,7 @@ export const updateReportStatus = async (req: AuthRequest, res: Response) => {
 export const deleteReport = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, 'Invalid report ID format');
         return;
     }
@@ -261,7 +261,7 @@ export const deleteReport = async (req: AuthRequest, res: Response) => {
 export const getReportStatusHistory = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
 
-    if (!UUID_REGEX.test(id)) {
+    if (!REPORT_ID_REGEX.test(id)) {
         sendError(res, 400, 'Invalid report ID format');
         return;
     }
