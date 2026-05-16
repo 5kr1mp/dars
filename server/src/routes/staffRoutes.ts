@@ -5,7 +5,8 @@ import {
     createStaff,
     updateStaff,
     deleteStaff,
-    changePassword
+    changePassword,
+    getMe
 } from "../controllers/staffController.js";
 import {
     assignOperatorBarangay,
@@ -20,6 +21,8 @@ router.route('/')
     .post(authenticate, authorizeRole("admin", "system_admin"), createStaff);
 
 router.post('/change-password', authenticate, changePassword);
+
+router.get('/me', authenticate, getMe);
 
 router.route('/:id/barangay')
     .put(authenticate, authorizeRole("admin", "system_admin"), assignOperatorBarangay)

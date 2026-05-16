@@ -1,8 +1,3 @@
-# Updated AbuseTypes View (Fetch From Controller)
-
-Replace your current Vue file with this version so the data is fetched from your Express controller instead of using hardcoded values.
-
-```vue
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'

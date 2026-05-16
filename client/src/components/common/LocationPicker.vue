@@ -113,6 +113,14 @@ watch(
   },
 )
 
+// Re-center the map when the parent passes a new center (e.g. user picks a different barangay).
+watch(
+  () => props.center,
+  (c) => {
+    map?.setView(c, props.zoom)
+  },
+)
+
 onBeforeUnmount(() => {
   map?.remove()
   map = null
