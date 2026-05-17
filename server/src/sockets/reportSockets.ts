@@ -26,10 +26,10 @@ export const initReportSockets = (io: Server) => {
 
         const user = socket.data.user as JwtUserPayload;
 
-        // operator
+        // operator joins barangay room
         if (user.barangay_id) socket.join(`barangay:${user.barangay_id}`)
-        // admin and sys admin
-        else socket.join('global')
+        // admin 
+        else socket.join('global') 
     });
 };
 

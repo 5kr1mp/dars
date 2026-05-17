@@ -869,7 +869,7 @@ BEGIN
         s.user_role,
         s.first_name,
         s.last_name,
-        b.id,
+        b.id as barangay_id,
         b.barangay_name
     FROM staff as s
     INNER JOIN barangay as b ON s.barangay_id = b.id 

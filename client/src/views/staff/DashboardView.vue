@@ -1,93 +1,136 @@
 <script setup lang="ts">
-import type {Report} from '@/types';
-import { computed , onMounted, ref, toRefs} from 'vue'
+import type { Report, ReportStatus, ReportSummary } from '@/types'
+import { computed, onMounted, ref } from 'vue'
 import StatCard from '../../components/common/StatCard.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import SeverityPill from '../../components/common/SeverityPill.vue'
-import AppButton from '../../components/common/AppButton.vue'
+import ReportsTrendChart from '../../components/common/ReportsTrendChart.vue'
+import { socket } from '@/services/socket'
 import { useAuth } from '@/services/auth'
 import { api } from '@/services/api'
 import IncidentMap, { type IncidentMarker } from '../../components/common/IncidentMap.vue'
+import { formatTimestamp } from '@/utils/format'
 
-const {user , barangay} = useAuth();
+const { user, barangay, role } = useAuth()
 
-const userShortName = computed( () => {
+const userShortName = computed(() => {
   if (!user.value) return ''
   return `${user.value.first_name[0]}. ${user.value.last_name}`
 })
 
 const reports = ref<Report[]>([])
-const loading = ref(false);
+const loading = ref(false)
 const error = ref('')
 
-onMounted(() => {
-  loadReports()
-})
+const mapMarkers = computed<IncidentMarker[]>(() =>
+  reports.value.map(report => ({
+    lat: report.latitude,
+    lng: report.longitude,
+    severity: report.severity,
+    status: report.report_status,
+    title: report.report_id,
+    subtitle: `Brgy. ${barangay.value}`,
+  } as IncidentMarker))
+)
 
-const mapMarkers: IncidentMarker[] = [
-  { lat: 14.6042, lng: 121.0432, severity: 8, status: 'On the way', title: 'SR-9KX2T1', subtitle: 'Brgy. San Isidro' },
-  { lat: 14.5898, lng: 121.0511, severity: 5, status: 'Dispatched', title: 'SR-7VL83Q', subtitle: 'Brgy. Maligaya' },
-  { lat: 14.6121, lng: 121.0354, severity: 9, status: 'Reported', title: 'SR-5BG7QR', subtitle: 'Brgy. Bagong Silang' },
-  { lat: 14.5972, lng: 121.0598, severity: 3, status: 'Investigating', title: 'SR-2KM18A', subtitle: 'Brgy. Sta. Maria' },
-  { lat: 14.6088, lng: 121.0476, severity: 10, status: 'Resolved', title: 'SR-A4DE19', subtitle: 'Brgy. San Isidro' },
-]
+// ─── Stat card computeds ──────────────────────────────────────
+const activeReports = computed(() =>
+  reports.value.filter(r => r.report_status !== 'Resolved').length
+)
+const criticalCases = computed(() =>
+  reports.value.filter(r => r.severity >= 8).length
+)
+const resolvedCount = computed(() =>
+  reports.value.filter(r => r.report_status === 'Resolved').length
+)
 
-const recentReports = [
-  { id: 'SR-9KX2T1', victim: 'Confidential', barangay: 'San Isidro', type: 'Physical', severity: 8, status: 'On the way', time: '2 min ago' },
-  { id: 'SR-7VL83Q', victim: 'M. Reyes', barangay: 'Maligaya', type: 'Emotional', severity: 5, status: 'Dispatched', time: '14 min ago' },
-  { id: 'SR-5BG7QR', victim: 'Anonymous', barangay: 'Bagong Silang', type: 'Physical', severity: 9, status: 'Reported', time: '22 min ago' },
-  { id: 'SR-2KM18A', victim: 'L. Santos', barangay: 'Sta. Maria', type: 'Verbal', severity: 3, status: 'Under Investigation', time: '1 hr ago' },
-  { id: 'SR-A4DE19', victim: 'Confidential', barangay: 'San Isidro', type: 'Sexual', severity: 10, status: 'Resolved', time: '3 hr ago' },
-]
-
+// ─── Barangay activity (stub — admin only) ────────────────────
 const barangayActivity = [
-  { name: 'Brgy. San Isidro', open: 4, total: 18, severity: 'high' },
-  { name: 'Brgy. Maligaya', open: 2, total: 11, severity: 'mod' },
+  { name: 'Brgy. San Isidro',    open: 4, total: 18, severity: 'high' },
+  { name: 'Brgy. Maligaya',      open: 2, total: 11, severity: 'mod'  },
   { name: 'Brgy. Bagong Silang', open: 5, total: 22, severity: 'high' },
-  { name: 'Brgy. Sta. Maria', open: 1, total: 7, severity: 'low' },
-  { name: 'Brgy. Mabini', open: 0, total: 3, severity: 'low' },
+  { name: 'Brgy. Sta. Maria',    open: 1, total:  7, severity: 'low'  },
+  { name: 'Brgy. Mabini',        open: 0, total:  3, severity: 'low'  },
 ]
 
-const responders = [
-  { name: 'PNP-WCPD San Isidro', agency: 'PNP', status: 'Available', cases: 1 },
-  { name: 'DSWD Crisis Team A', agency: 'DSWD', status: 'On The Way', cases: 1 },
-  { name: 'Brgy. Maligaya VAWC', agency: 'Barangay', status: 'Available', cases: 0 },
-  { name: 'PNP-WCPD Bagong Silang', agency: 'PNP', status: 'On Scene', cases: 2 },
-]
+const recentReports = computed<ReportSummary[]>(() =>
+  reports.value.map(r => ({
+    report_id:    r.report_id,
+    victim_name:  r.victim_name,
+    barangay_name: r.barangay_name,
+    abuse_name:   r.abuse_name,
+    severity:     r.severity,
+    report_status: r.report_status,
+    reported_time: r.reported_at,
+  } as ReportSummary))
+)
 
-async function loadReports(){
-  loading.value = true;
-  error.value = '';
+type SortKey = keyof ReportSummary
 
-  try {
+const sortKey = ref<SortKey | null>(null)
+const sortDir = ref<'asc' | 'desc'>('asc')
 
-    // if (!user.value){
-    //   throw new Error("User Not Authenticated")
-    // }
-
-    // const result = await api.get<Report[]>(`/reports?barangay_id=${encodeURIComponent(user.value!.barangay_id)}`)
-    const result = await api.get<Report[]>(`/reports?barangay_id=${encodeURIComponent(1)}`)
-
-    if (result.status === 'error'){
-      throw new Error(result.message);
-    }
-
-    reports.value = result.data;
-  } catch (err:any) {
-    error.value = err.message || "Something went wrong."
-  } finally {
-    loading.value = false;
+function toggleSort(key: SortKey) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
   }
 }
+
+const sortedReports = computed(() => {
+  if (!sortKey.value) return recentReports.value
+  const key = sortKey.value
+  return [...recentReports.value].sort((a, b) => {
+    const av = a[key], bv = b[key]
+    const cmp = typeof av === 'number'
+      ? (av as number) - (bv as number)
+      : String(av).localeCompare(String(bv))
+    return sortDir.value === 'asc' ? cmp : -cmp
+  })
+})
+
+function sortIcon(key: SortKey): string {
+  if (sortKey.value !== key) return '↕'
+  return sortDir.value === 'asc' ? '↑' : '↓'
+}
+
+onMounted(() => loadReports())
+
+async function loadReports() {
+  loading.value = true
+  error.value = ''
+  try {
+    const barangayId = user.value?.barangay_id
+    const query = barangayId ? `?barangay_id=${barangayId}` : ''
+    const result = await api.get<Report[]>(`/reports${query}`)
+    if (result.status === 'error') throw new Error(result.message)
+    reports.value = result.data
+  } catch (err: any) {
+    error.value = err.message || 'Something went wrong.'
+  } finally {
+    loading.value = false
+  }
+}
+
+socket.on("report:new", (payload : Report) =>{
+  reports.value.push(payload)
+})
+
+socket.on("report:status", (payload: { report_id: string, new_status: ReportStatus }) => {
+  const report = reports.value.find(r => r.report_id === payload.report_id)
+  if (report) report.report_status = payload.new_status
+})
 </script>
 
 <template>
   <div class="dashboard fade-up">
     <div v-if="loading" class="muted">Loading dashboard…</div>
-
     <div v-else-if="error" class="error-message">{{ error }}</div>
 
     <template v-else>
+      <!-- Header -->
       <div class="row row--between" style="margin-bottom: var(--space-4)">
         <div v-if="user">
           <h1>{{ userShortName }}</h1>
@@ -96,25 +139,46 @@ async function loadReports(){
           </p>
         </div>
       </div>
-  
-      <!-- Top stats -->
+
+      <!-- Stat cards (3) -->
       <div class="grid stats">
-        <StatCard label="Active Reports" :value="12" delta="3 vs yesterday" trend="up" tone="primary" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z'></path><path d='M2 10h20'></path></svg>`" />
-        <StatCard label="Avg. Response" value="22m" delta="4m faster" trend="down" tone="success" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polyline points='12,6 12,12 16,14'></polyline></svg>`" />
-        <StatCard label="Critical Cases" :value="3" delta="1 escalated" trend="up" tone="danger" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'></path><line x1='12' x2='12' y1='9' y2='13'></line><line x1='12' x2='12.01' y1='17' y2='17'></line></svg>`" />
-        <StatCard label="Resolved Today" :value="8" delta="On track" trend="flat" tone="success" :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22,4 12,14.01 9,11.01'></polyline></svg>`" />
+        <StatCard
+          label="Active Reports"
+          :value="activeReports"
+          :delta="`${reports.length} total`"
+          trend="flat"
+          tone="primary"
+          :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z'></path><path d='M2 10h20'></path></svg>`"
+        />
+        <StatCard
+          label="Critical Cases"
+          :value="criticalCases"
+          :delta="criticalCases > 0 ? 'Requires attention' : 'None active'"
+          :trend="criticalCases > 0 ? 'up' : 'flat'"
+          tone="danger"
+          :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'></path><line x1='12' x2='12' y1='9' y2='13'></line><line x1='12' x2='12.01' y1='17' y2='17'></line></svg>`"
+        />
+        <StatCard
+          label="Resolved"
+          :value="resolvedCount"
+          :delta="`of ${reports.length} total`"
+          trend="flat"
+          tone="success"
+          :icon="`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22,4 12,14.01 9,11.01'></polyline></svg>`"
+        />
       </div>
-  
+
+      <!-- Main grid: reports table + map -->
       <div class="grid main-grid">
         <!-- Recent Reports -->
         <div class="card recent-reports">
           <div class="card-head">
             <div>
               <h2>Recent reports</h2>
-              <p class="muted small">Updated in real time</p>
             </div>
             <div class="row" style="gap: var(--space-2)">
-              <select class="select-mini">
+              <!-- Barangay filter: admin only -->
+              <select v-if="role !== 'operator'" class="select-mini">
                 <option>All barangays</option>
                 <option>Brgy. San Isidro</option>
                 <option>Brgy. Maligaya</option>
@@ -130,25 +194,39 @@ async function loadReports(){
           <table class="table">
             <thead>
               <tr>
-                <th>Report ID</th>
-                <th>Victim</th>
-                <th>Barangay</th>
-                <th>Type</th>
-                <th>Severity</th>
-                <th>Status</th>
-                <th>Time</th>
+                <th class="th-sort" @click="toggleSort('report_id')">
+                  Report ID <span class="sort-icon">{{ sortIcon('report_id') }}</span>
+                </th>
+                <th class="th-sort" @click="toggleSort('victim_name')">
+                  Victim <span class="sort-icon">{{ sortIcon('victim_name') }}</span>
+                </th>
+                <th v-if="role !== 'operator'" class="th-sort" @click="toggleSort('barangay_name')">
+                  Barangay <span class="sort-icon">{{ sortIcon('barangay_name') }}</span>
+                </th>
+                <th class="th-sort" @click="toggleSort('abuse_name')">
+                  Type <span class="sort-icon">{{ sortIcon('abuse_name') }}</span>
+                </th>
+                <th class="th-sort" @click="toggleSort('severity')">
+                  Severity <span class="sort-icon">{{ sortIcon('severity') }}</span>
+                </th>
+                <th class="th-sort" @click="toggleSort('report_status')">
+                  Status <span class="sort-icon">{{ sortIcon('report_status') }}</span>
+                </th>
+                <th class="th-sort" @click="toggleSort('reported_time')">
+                  Timestamp <span class="sort-icon">{{ sortIcon('reported_time') }}</span>
+                </th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="r in recentReports" :key="r.id">
-                <td><code class="code-id">{{ r.id }}</code></td>
-                <td>{{ r.victim }}</td>
-                <td>{{ r.barangay }}</td>
-                <td>{{ r.type }}</td>
+              <tr v-for="r in sortedReports" :key="r.report_id">
+                <td><code class="code-id">{{ r.report_id }}</code></td>
+                <td>{{ r.victim_name }}</td>
+                <td>{{ r.barangay_name }}</td>
+                <td>{{ r.abuse_name }}</td>
                 <td><SeverityPill :severity="r.severity" /></td>
-                <td><StatusBadge :status="r.status" /></td>
-                <td class="muted">{{ r.time }}</td>
+                <td><StatusBadge :status="r.report_status" /></td>
+                <td class="muted">{{ formatTimestamp(r.reported_time) }}</td>
                 <td>
                   <button class="row-link">View →</button>
                 </td>
@@ -156,10 +234,9 @@ async function loadReports(){
             </tbody>
           </table>
         </div>
-  
-        <!-- Side column -->
+
+        <!-- Side: live map only -->
         <div class="col" style="gap: var(--space-4)">
-          <!-- Live map preview -->
           <div class="card map-preview">
             <div class="card-head">
               <h2>Live map</h2>
@@ -174,29 +251,12 @@ async function loadReports(){
               />
             </div>
           </div>
-  
-          <!-- Responders -->
-          <div class="card">
-            <div class="card-head">
-              <h2>Responders</h2>
-              <a href="#" class="muted small">Manage →</a>
-            </div>
-            <ul class="resp-list">
-              <li v-for="r in responders" :key="r.name">
-                <div>
-                  <strong>{{ r.name }}</strong>
-                  <div class="muted small">{{ r.agency }} · {{ r.cases }} active</div>
-                </div>
-                <StatusBadge :status="r.status" />
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
-  
-      <!-- Bottom: barangay & trend -->
-      <div class="grid bottom-grid">
-        <div class="card card--padded">
+
+      <!-- Bottom: barangay activity (admin only) + trend chart -->
+      <div class="grid bottom-grid" :class="{ 'bottom-grid--single': role !== 'admin' }">
+        <div v-if="role === 'admin'" class="card card--padded">
           <div class="card-head" style="padding: 0; margin-bottom: var(--space-4)">
             <h2>Barangay activity</h2>
             <span class="muted small">This week</span>
@@ -208,57 +268,21 @@ async function loadReports(){
                 <span class="brgy-meta muted small">{{ b.open }} open · {{ b.total }} total</span>
               </div>
               <div class="bar">
-                <span :style="{ width: (b.total / 22) * 100 + '%', background: b.severity === 'high' ? 'var(--sev-high)' : b.severity === 'mod' ? 'var(--sev-mod)' : 'var(--sev-low)' }" />
+                <span
+                  :style="{
+                    width: (b.total / 22) * 100 + '%',
+                    background:
+                      b.severity === 'high' ? 'var(--sev-high)'
+                      : b.severity === 'mod' ? 'var(--sev-mod)'
+                      : 'var(--sev-low)',
+                  }"
+                />
               </div>
             </li>
           </ul>
         </div>
-  
-        <div class="card card--padded">
-          <div class="card-head" style="padding: 0; margin-bottom: var(--space-4)">
-            <h2>Reports trend</h2>
-            <span class="muted small">Last 7 days</span>
-          </div>
-          <div class="chart">
-            <div class="chart__grid">
-              <span></span><span></span><span></span><span></span>
-            </div>
-            <svg viewBox="0 0 320 130" preserveAspectRatio="none" class="chart__svg">
-              <defs>
-                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#2c8780" stop-opacity="0.4" />
-                  <stop offset="100%" stop-color="#2c8780" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M0,90 L46,72 L92,84 L138,52 L184,60 L230,30 L276,42 L320,18 L320,130 L0,130 Z"
-                fill="url(#g1)"
-              />
-              <path
-                d="M0,90 L46,72 L92,84 L138,52 L184,60 L230,30 L276,42 L320,18"
-                fill="none"
-                stroke="#2c8780"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <g fill="#2c8780">
-                <circle cx="0" cy="90" r="3.5"/>
-                <circle cx="46" cy="72" r="3.5"/>
-                <circle cx="92" cy="84" r="3.5"/>
-                <circle cx="138" cy="52" r="3.5"/>
-                <circle cx="184" cy="60" r="3.5"/>
-                <circle cx="230" cy="30" r="3.5"/>
-                <circle cx="276" cy="42" r="3.5"/>
-                <circle cx="320" cy="18" r="3.5"/>
-              </g>
-            </svg>
-            <div class="chart__axis">
-              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span>
-              <span>Fri</span><span>Sat</span><span>Sun</span><span>Today</span>
-            </div>
-          </div>
-        </div>
+
+        <ReportsTrendChart :reports="reports" />
       </div>
     </template>
   </div>
@@ -285,7 +309,7 @@ async function loadReports(){
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
@@ -306,11 +330,13 @@ async function loadReports(){
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
+
 .card-head h2 {
   margin: 0;
   font-size: 16px;
 }
 
+/* ─── Table ────────────────────────────────────── */
 .recent-reports .table {
   font-size: 13px;
 }
@@ -333,6 +359,23 @@ async function loadReports(){
   font-size: 13px;
 }
 
+.th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.th-sort:hover {
+  color: var(--color-primary-700);
+}
+
+.sort-icon {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+/* ─── Filters ──────────────────────────────────── */
 .select-mini {
   min-width: 140px;
   padding: var(--space-2) var(--space-3);
@@ -343,33 +386,23 @@ async function loadReports(){
   color: var(--color-text);
 }
 
+/* ─── Map ──────────────────────────────────────── */
 .map {
   padding: var(--space-4);
 }
 
-.resp-list {
-  list-style: none;
-  margin: 0;
-  padding: var(--space-3);
-}
-.resp-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.resp-list li:last-child {
-  border-bottom: none;
-}
-
+/* ─── Bottom grid ──────────────────────────────── */
 .bottom-grid {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
   gap: var(--space-5);
 }
 
+.bottom-grid--single {
+  grid-template-columns: 1fr;
+}
+
+/* ─── Barangay activity ────────────────────────── */
 .brgy-list {
   list-style: none;
   padding: 0;
@@ -377,6 +410,7 @@ async function loadReports(){
   display: grid;
   gap: var(--space-4);
 }
+
 .brgy-row {
   display: flex;
   justify-content: space-between;
@@ -384,9 +418,11 @@ async function loadReports(){
   margin-bottom: var(--space-2);
   font-size: 14px;
 }
+
 .brgy-name {
   font-weight: 600;
 }
+
 .bar {
   height: var(--space-2);
   background: var(--color-surface-alt);
@@ -394,6 +430,7 @@ async function loadReports(){
   overflow: hidden;
   border: 1px solid var(--color-border);
 }
+
 .bar > span {
   display: block;
   height: 100%;
@@ -401,46 +438,15 @@ async function loadReports(){
   transition: width 0.4s ease;
 }
 
-.chart {
-  position: relative;
-  min-height: 224px;
-}
-.chart__grid {
-  position: absolute;
-  inset: 0 0 var(--space-6) 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.chart__grid span {
-  border-top: 1px dashed var(--color-border);
-}
-.chart__svg {
-  position: absolute;
-  inset: 0 0 var(--space-6) 0;
-  width: 100%;
-  height: calc(100% - var(--space-6));
-}
-.chart__axis {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  font-size: 11px;
-  color: var(--color-text-soft);
-}
-.chart__axis span {
-  text-align: center;
-}
-
+/* ─── Responsive ───────────────────────────────── */
 @media (max-width: 1200px) {
   .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
   .main-grid,
-  .bottom-grid {
+  .bottom-grid,
+  .bottom-grid--single {
     grid-template-columns: 1fr;
   }
 }
@@ -449,6 +455,7 @@ async function loadReports(){
   .dashboard h1 {
     font-size: 22px;
   }
+
   .recent-reports .card-head {
     flex-direction: column;
     align-items: flex-start;

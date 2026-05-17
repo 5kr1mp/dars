@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ReportStatus } from '@/types'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -9,7 +10,7 @@ export interface IncidentMarker {
   lng: number
   /** 1-10 severity, controls pin color */
   severity?: number
-  status?: string
+  status?: ReportStatus
   title?: string
   subtitle?: string
 }

@@ -200,8 +200,8 @@ export const updateReportStatus = async (req: AuthRequest, res: Response) => {
     try {
         conn = await getConn();
 
-        const [rows] = await conn.execute<ReportRow[]>(
-            'SELECT report_id FROM vw_report WHERE report_id = ?',
+        const [rows] = await conn.execute<RowDataPacket[]>(
+            'SELECT barangay_id FROM report WHERE id = ?',
             [id]
         );
 
@@ -212,8 +212,13 @@ export const updateReportStatus = async (req: AuthRequest, res: Response) => {
 
         await conn.execute(
             'CALL sp_report_update_status(?, ?, ?)',
-            [id, new_status, req.user!.staff_id]
+            [id, new_status as ReportStatus, req.user!.staff_id]
         );
+
+        getIo()?.to(`barangay:${rows[0]?.barangay_id}`).to('global').emit('report:status', {
+            report_id: id,
+            new_status
+        });
 
         sendSuccess(res, 200, 'Report status updated successfully', null);
     } catch (err: any) {

@@ -33,6 +33,16 @@ export interface Report {
   report_description: string | null
 }
 
+export interface ReportSummary{
+  report_id: string
+  victim_name: string
+  barangay_name: string
+  abuse_name: string
+  severity: number
+  report_status: ReportStatus
+  reported_time: string
+}
+
 export interface Dispatch {
   dispatch_id: number
   dispatch_status: DispatchStatus
