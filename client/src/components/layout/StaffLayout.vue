@@ -1,47 +1,54 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
-import { ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { ref, watch, computed } from 'vue'
 import AppLogo from '../common/AppLogo.vue'
+import { useAuth } from '@/services/auth'
 
-const router = useRouter()
 const route = useRoute()
 const userMenuOpen = ref(false)
 const drawerOpen = ref(false)
+const { user, role, logout: authLogout } = useAuth()
 
 function logout() {
-  router.push('/staff/login')
+  authLogout()
 }
 
 // Close drawer on route change
 watch(() => route.fullPath, () => (drawerOpen.value = false))
 
-const navGroups = [
-  {
+const navGroups = computed(() => {
+  const ops = {
     label: 'Operations',
     items: [
       { to: '/staff/dashboard', icon: 'home', label: 'Dashboard' },
-      { to: '/staff/reports', icon: 'file', label: 'Reports', badge: 12 },
-      { to: '/staff/dispatch', icon: 'truck', label: 'Dispatch', badge: 4 },
-      { to: '/staff/map', icon: 'map', label: 'Live Map' },
+      { to: '/staff/reports',   icon: 'file', label: 'Reports' },
+      { to: '/staff/dispatch',  icon: 'truck', label: 'Dispatch' },
     ],
-  },
-  {
+  }
+  const records = {
     label: 'Records',
     items: [
-      { to: '/staff/responders', icon: 'shield', label: 'Responders' },
-      { to: '/staff/barangays', icon: 'pin', label: 'Barangays' },
-      { to: '/staff/abuse-types', icon: 'tag', label: 'Abuse Types' },
+      { to: '/staff/responders',  icon: 'shield', label: 'Responders' },
+      { to: '/staff/barangays',   icon: 'pin',    label: 'Barangays' },
+      { to: '/staff/abuse-types', icon: 'tag',    label: 'Abuse Types' },
     ],
-  },
-  {
+  }
+  const system = {
     label: 'System',
     items: [
-      { to: '/staff/staff', icon: 'users', label: 'Staff' },
-      { to: '/staff/audit', icon: 'history', label: 'Audit Log' },
-      { to: '/staff/settings', icon: 'gear', label: 'Settings' },
+      { to: '/staff/staff',    icon: 'users',   label: 'Staff' },
+      { to: '/staff/audit',    icon: 'history', label: 'Audit Log' },
+      { to: '/staff/settings', icon: 'gear',    label: 'Settings' },
     ],
-  },
-]
+  }
+  const settingsOnly = {
+    label: 'System',
+    items: [{ to: '/staff/settings', icon: 'gear', label: 'Settings' }],
+  }
+
+  if (role.value === 'system_admin') return [system]
+  return [ops, records, settingsOnly]
+})
 
 const icons: Record<string, string> = {
   home: 'M3 12l9-9 9 9M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10',
@@ -93,7 +100,6 @@ const icons: Record<string, string> = {
               <path :d="icons[item.icon]" />
             </svg>
             <span class="nav-label">{{ item.label }}</span>
-            <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
           </RouterLink>
         </div>
       </nav>
@@ -127,46 +133,20 @@ const icons: Record<string, string> = {
           </svg>
         </button>
 
-        <div class="topbar__search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        <div class="user-pill" @click="userMenuOpen = !userMenuOpen">
+          <span class="avatar">{{ user?.first_name?.[0] }}{{ user?.last_name?.[0] }}</span>
+          <div class="who">
+            <strong>{{ user?.first_name }} {{ user?.last_name }}</strong>
+            <span>{{ role }} · {{ user?.barangay_name ?? 'All Barangays' }}</span>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret">
+            <polyline points="6 9 12 15 18 9" />
           </svg>
-          <input placeholder="Search reports, victims, responders…" />
-          <kbd>⌘K</kbd>
-        </div>
-
-        <div class="topbar__actions">
-          <button class="icon-btn" title="Notifications">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <span class="dot-pulse" />
-          </button>
-          <button class="icon-btn help" title="Help">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          </button>
-          <div class="user-pill" @click="userMenuOpen = !userMenuOpen">
-            <span class="avatar">AC</span>
-            <div class="who">
-              <strong>A. Cruz</strong>
-              <span>Operator · Brgy. San Isidro</span>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-            <div v-if="userMenuOpen" class="user-menu" @click.stop>
-              <button>Profile</button>
-              <button>Preferences</button>
-              <button class="danger" @click="logout">Sign out</button>
-            </div>
+          <div v-if="userMenuOpen" class="user-menu" @click.stop>
+            <button>Profile</button>
+            <button>Preferences</button>
+            <button class="danger" @click="logout">Sign out</button>
           </div>
         </div>
       </header>
@@ -394,6 +374,7 @@ kbd {
   border-radius: var(--radius-full);
   cursor: pointer;
   position: relative;
+  margin-left: auto;
 }
 .user-pill:hover { border-color: var(--color-primary-300); }
 .avatar {

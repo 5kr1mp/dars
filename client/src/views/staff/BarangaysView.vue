@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import AppButton from '../../components/common/AppButton.vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import IncidentMap, {
   type IncidentMarker,
   type CoverageZone,
 } from '../../components/common/IncidentMap.vue'
+import { api } from '../../services/api'
 
 interface Barangay {
   barangay_id: number
@@ -22,24 +22,12 @@ const error = ref('')
 async function fetchBarangays() {
   loading.value = true
   error.value = ''
-
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/barangays'
-    )
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(
-        data.message || 'Failed to fetch barangays'
-      )
-    }
-
-    barangays.value = data.data
+    const result = await api.get<Barangay[]>('/barangay')
+    if (result.status === 'error') throw new Error(result.message)
+    barangays.value = result.data
   } catch (err: any) {
-    error.value =
-      err.message || 'Something went wrong'
+    error.value = err.message || 'Something went wrong'
   } finally {
     loading.value = false
   }
@@ -115,15 +103,6 @@ const mapCenter = computed<[number, number]>(() => {
         </p>
       </div>
 
-      <div class="row" style="gap: 8px">
-        <AppButton variant="secondary">
-          Map view
-        </AppButton>
-
-        <AppButton variant="primary">
-          + Add Barangay
-        </AppButton>
-      </div>
     </div>
 
     <div
@@ -153,7 +132,6 @@ const mapCenter = computed<[number, number]>(() => {
               <th>Longitude</th>
               <th>Coverage</th>
               <th>Status</th>
-              <th></th>
             </tr>
           </thead>
 
@@ -221,12 +199,6 @@ const mapCenter = computed<[number, number]>(() => {
 
               <td>
                 <StatusBadge status="Active" />
-              </td>
-
-              <td>
-                <button class="row-link">
-                  Edit →
-                </button>
               </td>
             </tr>
           </tbody>

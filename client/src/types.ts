@@ -10,7 +10,7 @@ export interface SafeUser {
   email: string
   first_name: string
   last_name: string
-  role: UserRole
+  user_role: UserRole
   barangay_id : number
   barangay_name : string
 }
@@ -96,6 +96,16 @@ export interface Offender {
   first_name: string
   sex: Sex | null
   barangay_name: string | null
+}
+
+export interface ReportStatusHistory {
+  history_id: number
+  report_id: string
+  old_status: ReportStatus | null
+  new_status: ReportStatus
+  changed_at: string
+  barangay_name: string
+  victim_name: string
 }
 
 export interface ReportNewPayload {

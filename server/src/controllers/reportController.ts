@@ -271,22 +271,30 @@ export const getReportStatusHistory = async (req: AuthRequest, res: Response) =>
         return;
     }
 
-    const conn = await getConn();
+    let conn;
+    try {
+        conn = await getConn();
 
-    if (req.user?.user_role === 'operator') {
-        const [own] = await conn.execute<RowDataPacket[]>(
-            'SELECT 1 FROM report WHERE id = ? AND barangay_id = ?',
-            [id, req.user.barangay_id ?? -1]
-        );
-        if (own.length === 0) {
-            await conn.end();
-            sendError(res, 404, 'Report not found');
+        if (req.user?.user_role === 'operator') {
+            const [own] = await conn.execute<RowDataPacket[]>(
+                'SELECT 1 FROM report WHERE id = ? AND barangay_id = ?',
+                [id, req.user.barangay_id ?? -1]
+            );
+            if (own.length === 0) {
+                sendError(res, 404, 'Report not found');
+                return;
+            }
+        }
+
+        const [result]: any = await conn.execute('CALL sp_report_status_history_get(?)', [id]);
+        sendSuccess(res, 200, 'Report status history retrieved successfully', result[0]);
+    } catch (err: any) {
+        if (err.sqlMessage) {
+            sendError(res, 400, err.sqlMessage);
             return;
         }
+        sendError(res, 500, err.message);
+    } finally {
+        if (conn) await conn.end();
     }
-
-    const [result]: any = await conn.execute('CALL sp_report_status_history_get(?)', [id]);
-    await conn.end();
-
-    sendSuccess(res, 200, 'Report status history retrieved successfully', result[0]);
 };

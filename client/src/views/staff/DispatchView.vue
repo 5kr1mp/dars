@@ -3,6 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 import AppButton from '../../components/common/AppButton.vue'
 import { api } from '../../services/api'
+import { useAuth } from '../../services/auth'
+
+const { role } = useAuth()
 
 type DispatchStatus = 'Assigned' | 'On The Way' | 'Arrived' | 'Completed'
 
@@ -163,7 +166,7 @@ onMounted(fetchAll)
         <AppButton variant="secondary" @click="fetchAll" :disabled="loading">
           {{ loading ? 'Loading…' : 'Refresh' }}
         </AppButton>
-        <AppButton variant="primary" @click="showModal = true">+ New Dispatch</AppButton>
+        <AppButton v-if="role === 'operator'" variant="primary" @click="showModal = true">+ New Dispatch</AppButton>
       </div>
     </div>
 
@@ -196,7 +199,7 @@ onMounted(fetchAll)
               <span>{{ d.responder_name }}<template v-if="d.agency"> · {{ d.agency }}</template></span>
             </div>
             <button
-              v-if="NEXT_STATUS[d.dispatch_status]"
+              v-if="role === 'operator' && NEXT_STATUS[d.dispatch_status]"
               class="advance-btn"
               :disabled="updatingId === d.dispatch_id"
               @click="advanceStatus(d)"

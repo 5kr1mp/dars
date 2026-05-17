@@ -2,6 +2,10 @@
 import { onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import SeverityPill from '../../components/common/SeverityPill.vue'
+import { useAuth } from '../../services/auth'
+import { api } from '../../services/api'
+
+const { role } = useAuth()
 
 interface AbuseType {
   abuse_name: string
@@ -18,17 +22,10 @@ const error = ref('')
 async function fetchAbuseTypes() {
   loading.value = true
   error.value = ''
-
   try {
-    const response = await fetch('http://localhost:3000/api/abuse-types')
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch abuse types')
-    }
-
-    types.value = data.data
+    const result = await api.get<AbuseType[]>('/abuse-type')
+    if (result.status === 'error') throw new Error(result.message)
+    types.value = result.data
   } catch (err: any) {
     error.value = err.message || 'Something went wrong'
   } finally {
@@ -49,7 +46,7 @@ onMounted(() => {
         <p class="muted">Categories used when classifying reports.</p>
       </div>
 
-      <AppButton variant="primary">
+      <AppButton v-if="role === 'admin'" variant="primary">
         + Add Type
       </AppButton>
     </div>
@@ -113,6 +110,7 @@ onMounted(() => {
         </div>
 
         <div
+          v-if="role === 'admin'"
           class="row"
           style="gap: var(--space-1); margin-top: var(--space-4)"
         >

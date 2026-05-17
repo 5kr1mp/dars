@@ -1,7 +1,6 @@
 import type { SafeUser, UserRole } from '@/types';
 import { reactive, computed } from 'vue'
 import { api } from './api'
-import router from '../router'
 /** Public user fields returned by the server after login (no password). */
 interface LoginData {
   token: string
@@ -47,7 +46,7 @@ export const useAuth = () => {
   const user = computed(() => state.user)
 
   /** Role of the current user: `'system_admin'`, `'admin'`, `'operator'`, or `null`. */
-  const role = computed(() => state.user?.role ?? null)
+  const role = computed(() => state.user?.user_role)
 
   /** Barangay assignment of the staff */
   const barangay = computed(() => state.user?.barangay_name)
@@ -65,7 +64,7 @@ export const useAuth = () => {
     state.user = loginData.safe_user
     localStorage.setItem(TOKEN_KEY, loginData.token)
     localStorage.setItem(USER_KEY, JSON.stringify(loginData.safe_user))
-    router.push('/staff/dashboard')
+    window.location.href = '/staff/dashboard'
   }
 
   /**
@@ -76,7 +75,7 @@ export const useAuth = () => {
     state.user = null
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
-    router.push('/staff/login')
+    window.location.href = '/staff/login'
   }
 
   return { isLoggedIn, user, role, barangay, login, logout}

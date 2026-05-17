@@ -21,7 +21,7 @@ router.route('/')
     .get(authenticate, getAllReports)
     .post(createReport);
 
-router.get('/:id/history', getReportStatusHistory);
+router.get('/:id/history', authenticate, getReportStatusHistory);
 
 router.route('/:id/resolve')
     .post(authenticate, resolveReport)
