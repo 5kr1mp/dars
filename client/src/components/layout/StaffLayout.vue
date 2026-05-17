@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { ref, watch, computed } from 'vue'
 import AppLogo from '../common/AppLogo.vue'
 import { useAuth } from '@/services/auth'
 
 const route = useRoute()
+const router = useRouter()
 const userMenuOpen = ref(false)
 const drawerOpen = ref(false)
 const { user, role, logout: authLogout } = useAuth()
@@ -36,18 +37,13 @@ const navGroups = computed(() => {
   const system = {
     label: 'System',
     items: [
-      { to: '/staff/staff',    icon: 'users',   label: 'Staff' },
-      { to: '/staff/audit',    icon: 'history', label: 'Audit Log' },
-      { to: '/staff/settings', icon: 'gear',    label: 'Settings' },
+      { to: '/staff/staff',  icon: 'users',   label: 'Staff' },
+      { to: '/staff/audit',  icon: 'history', label: 'Audit Log' },
     ],
-  }
-  const settingsOnly = {
-    label: 'System',
-    items: [{ to: '/staff/settings', icon: 'gear', label: 'Settings' }],
   }
 
   if (role.value === 'system_admin') return [system]
-  return [ops, records, settingsOnly]
+  return [ops, records]
 })
 
 const icons: Record<string, string> = {
@@ -103,17 +99,6 @@ const icons: Record<string, string> = {
           </RouterLink>
         </div>
       </nav>
-
-      <div class="sidebar__foot">
-        <div class="alert-side">
-          <strong>Emergency Mode</strong>
-          <p>Auto-prioritizes Critical reports.</p>
-          <label class="switch">
-            <input type="checkbox" />
-            <span></span>
-          </label>
-        </div>
-      </div>
     </aside>
 
     <div v-if="drawerOpen" class="scrim" @click="drawerOpen = false"></div>
@@ -144,8 +129,7 @@ const icons: Record<string, string> = {
             <polyline points="6 9 12 15 18 9" />
           </svg>
           <div v-if="userMenuOpen" class="user-menu" @click.stop>
-            <button>Profile</button>
-            <button>Preferences</button>
+            <button @click="router.push('/staff/settings')">Profile</button>
             <button class="danger" @click="logout">Sign out</button>
           </div>
         </div>

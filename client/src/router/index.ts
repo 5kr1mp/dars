@@ -18,7 +18,7 @@ import BarangaysView from '../views/staff/BarangaysView.vue'
 import AbuseTypesView from '../views/staff/AbuseTypesView.vue'
 import AuditView from '../views/staff/AuditView.vue'
 import StaffMgmtView from '../views/staff/StaffMgmtView.vue'
-import SettingsView from '../views/staff/SettingsView.vue'
+import ProfileView from '../views/staff/ProfileView.vue'
 
 const TOKEN_KEY = 'dars_token'
 const USER_KEY = 'dars_user'
@@ -54,7 +54,7 @@ const router = createRouter({
         { path: 'abuse-types', name: 'staff-abuse-types', component: AbuseTypesView },
         { path: 'audit', name: 'staff-audit', component: AuditView },
         { path: 'staff', name: 'staff-staff', component: StaffMgmtView },
-        { path: 'settings', name: 'staff-settings', component: SettingsView },
+        { path: 'settings', name: 'staff-settings', component: ProfileView },
       ],
     },
   ],
